@@ -3,7 +3,7 @@ import httpx
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 import os
-import re
+from sql_utils import extract_sql
 
 OPENAI_API_KEY = os.environ['API_KEY']
 BASE_URL = os.environ['BASE_URL']
@@ -42,27 +42,6 @@ Tables and their columns:
 ALWAYS wrap the sql code in ```sql```.
 """
 
-def extract_sql(text: str) -> str:
-    """
-    Extracts the SQL query from an LLM/agent response.
-    Handles fenced code blocks (```sql ... ```), plain SQL, and comments.
-    """
-    if not text:
-        return ""
-
-    # 1. If inside ```sql ... ```
-    code_block = re.search(r"```(?:sql)?\s*([\s\S]*?)```", text, re.IGNORECASE)
-    if code_block:
-        return code_block.group(1).strip().rstrip(";") + ";"
-
-    # 2. If inside generic ``` ```
-    generic_block = re.search(r"```([\s\S]*?)```", text)
-    if generic_block:
-        return generic_block.group(1).strip().rstrip(";") + ";"
-
-    # 3. Otherwise, assume text is already SQL
-    return text.strip().rstrip(";") + ";"
-
 # -------------------------------
 # Define the model with custom base URL, API key, and model name
 # -------------------------------
@@ -86,10 +65,39 @@ sql_agent = Agent(
 
 
 async def generate_sql_query(instruction: str) -> str:
+    """
+    Generate a PostgreSQL SQL query from a natural language instruction using the SQL agent.
+
+    This function:
+      1. Sends the instruction to the `sql_agent`.
+      2. Extracts a clean SQL query string from the agent's output 
+         (removing ```sql fences, trailing semicolons, etc.).
+      3. Returns both the cleaned SQL query and the raw agent output.
+
+    Parameters
+    ----------
+    instruction : str
+        A natural language description of the desired query (e.g., 
+        "Show the 5 most recent searches with their queries and timestamps.").
+
+    Returns
+    -------
+    tuple[str, str]
+        (sql_query, raw_output) if successful:
+            - sql_query: the cleaned, executable SQL query.
+            - raw_output: the unprocessed response from the agent.
+        
+        If an exception occurs, returns an error message string prefixed with `-- ERROR`.
+
+    Notes
+    -----
+    - This function uses the helper `extract_sql()` to sanitize the SQL query.
+    - Ensure `sql_agent` and `extract_sql` are defined and imported.
+    """
     try:
         result = await sql_agent.run(instruction)
         sql_query = extract_sql(result.output)
         return sql_query, result.output
     except Exception as e:
         # Handle model/agent errors gracefully
-        return f"-- ERROR: Failed to generate SQL query.\n-- Reason: {str(e)}"
+        return "", f"-- ERROR: Failed to generate SQL query.\n-- Reason: {str(e)}"
