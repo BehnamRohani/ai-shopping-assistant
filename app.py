@@ -32,8 +32,6 @@ RE_MEMBER = re.compile(r"return member random key:\s*([A-Za-z0-9\-_:]+)", re.IGN
 # ------ Endpoint ------
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
-    start = time.time()
-    # optional auth
 
     # very small defensive check
     if not req.messages:
