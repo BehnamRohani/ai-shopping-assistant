@@ -5,4 +5,4 @@ openai
 uvicorn[standard]
 python-dotenv
 pandas
-numpy2
+numpy
