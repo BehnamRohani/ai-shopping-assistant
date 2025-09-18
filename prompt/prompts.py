@@ -110,6 +110,7 @@ instructions_generated = """
   2. Fill the Pydantic response for your final answer.
   3. base_random_keys should only be filled if user asks for product(s). And member_random_keys should only be filled if user
   asks for shop(s). So there is no need, for example, to fill member_random_keys if user is only after a product.
+  4. message field should only contain information requested by the user. Avoid long messages and only give what's requested.
 """
 
 system_role_initial = """
