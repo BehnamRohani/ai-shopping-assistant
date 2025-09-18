@@ -1,13 +1,26 @@
 # app.py
 import os
 import re
-import json
-import uuid
-import time
 from typing import List, Optional, Literal
-from datetime import datetime
-from fastapi import FastAPI, Request, Header, HTTPException
+from fastapi import FastAPI
 from pydantic import BaseModel
+from dotenv import load_dotenv
+from shopping_agent import run_shopping_agent
+
+# Load environment variables
+load_dotenv()
+
+OPENAI_API_KEY = os.environ['API_KEY']
+BASE_URL = os.environ['BASE_URL']
+MODEL_NAME = "gpt-4.1-mini"
+
+DB_CONFIG = {
+    "host": os.getenv("DB_HOST"),
+    "port": os.getenv("DB_PORT"),
+    "dbname": os.getenv("DB_NAME"),
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
+}
 
 app = FastAPI()
 
@@ -59,7 +72,10 @@ async def chat(req: ChatRequest):
         key = m_member.group(1)
         resp = ChatResponse(message=None, base_random_keys=None, member_random_keys=[key])
         return resp
+    
+
+    result = await run_shopping_agent(content)
 
     # default fallback
-    resp = ChatResponse(message="متأسفم، متوجه نشدم. لطفاً دقیق‌تر بپرسید.", base_random_keys=None, member_random_keys=None)
+    resp = ChatResponse(**dict(result.output))
     return resp
