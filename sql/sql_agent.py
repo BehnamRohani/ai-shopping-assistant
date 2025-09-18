@@ -8,13 +8,13 @@ from prompt.prompts import system_prompt_sql
 
 OPENAI_API_KEY = os.environ['API_KEY']
 BASE_URL = os.environ['BASE_URL']
-MODEL_NAME = "gpt-4.1-mini"
+SQL_MODEL = os.envrion['SQL_MODEL']
 
 # -------------------------------
 # Define the model with custom base URL, API key, and model name
 # -------------------------------
 client = OpenAIChatModel(
-    MODEL_NAME,
+    SQL_MODEL,
     provider=OpenAIProvider(
         base_url=BASE_URL,
         api_key=OPENAI_API_KEY,

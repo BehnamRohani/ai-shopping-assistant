@@ -42,13 +42,24 @@ DB_CONFIG = {
     "password": os.getenv("DB_PASSWORD", ""),
 }
 
-MODEL_NAME = "gpt-4.1-mini"
+INITIAL_THOUGHT_MODEL = os.getenv("INITIAL_THOUGHT_MODEL")
+SHOPPING_MODEL = os.getenv("SHOPPING_MODEL")
 OPENAI_API_KEY = os.getenv("API_KEY")
 BASE_URL = os.getenv("BASE_URL")  # e.g. https://turbo.torob.com/v1
 
 
-client = OpenAIChatModel(
-    MODEL_NAME,
+shopping_client = OpenAIChatModel(
+    SHOPPING_MODEL,
+    provider=OpenAIProvider(
+        base_url=BASE_URL,
+        api_key=OPENAI_API_KEY,
+        http_client=httpx.AsyncClient()
+    ),
+    settings=ModelSettings(temperature=0.001, max_tokens=1024)
+)
+
+initial_client = OpenAIChatModel(
+    INITIAL_THOUGHT_MODEL,
     provider=OpenAIProvider(
         base_url=BASE_URL,
         api_key=OPENAI_API_KEY,
@@ -59,7 +70,7 @@ client = OpenAIChatModel(
 
 cot_agent = Agent(
     name="TorobAssistantPlanner",
-    model=client,
+    model=initial_client,
     system_prompt=system_prompt.format(system_role = system_role_initial,
                                         tools = tools_info, 
                                        rules = rules_initial),
@@ -79,7 +90,7 @@ class ShoppingResponse(BaseModel):
 
 shopping_agent = Agent(
     name="TorobShoppingAssistant",
-    model=client,
+    model=shopping_client,
     system_prompt=system_prompt.format(system_role = system_role,
                                         tools = tools_info, 
                                        rules = instructions_generated),

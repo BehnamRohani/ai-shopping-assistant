@@ -112,11 +112,13 @@ rules_initial = """
 """
 
 instructions_generated = """
-  1. Use SQL tools if necessary.
-  2. Fill the Pydantic response for your final answer.
-  3. base_random_keys should only be filled if user asks for product(s). And member_random_keys should only be filled if user
-  asks for shop(s). So there is no need, for example, to fill member_random_keys if user is only after a product.
-  4. message field should only contain desired information requested by the user. Avoid long messages and only give what's requested.
+1. Always return the Pydantic response with these fields:
+   - message: a short, direct answer to the user’s request.
+   - base_random_keys: list of random_key(s) for products (only if user is asking about products).
+   - member_random_keys: list of random_key(s) for shops (only if user is asking about shops).
+2. base_random_keys should always contain the **final product(s) the user actually requested**. Do not include intermediate results or related products unless explicitly asked.
+3. Keep the `message` concise, containing only the requested information. No extra commentary.
+
 """
 
 system_role_initial = """
