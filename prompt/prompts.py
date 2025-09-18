@@ -81,9 +81,6 @@ You have access to the following tools:
 
 4. execute_sql(query: str) -> list[RealDictRow]: 
    Executes a PostgreSQL query and returns results.
-
-### Priority:
-- Use `generate_sql_query` only when a query cannot be expressed through the built-in query helpers.
 """
 
 
@@ -107,8 +104,15 @@ rules_initial = """
   2. Which parts of output should you fill? (message, base_random_keys, member_random_keys) Which ones should be null?
   3. What subtasks does this task have? Break it down into small steps.
 
-  NOTES: 
-  - Be concise as much as possible and don't make things more convoluted than necessary.
+  ### SQL Query Guidelines:
+   - Prefer `build_exact_query_and_execute` or `build_like_query_and_execute` **only for simple searches** like finding products by id or name or substring matches.
+   - **For any request that requires aggregation, computation, or statistics** (e.g., lowest price, highest price, average price, number of shops, stock counts, totals, or other calculations), **you MUST use `generate_sql_query` to create a custom SQL query**, then execute it with `execute_sql`.
+   - You may combine multiple helper tools if necessary, but **do not force simple helpers to handle tasks they cannot do accurately**.
+   - Always ensure the generated SQL is correct and matches the user’s request precisely.
+
+   ### Notes:
+   - Be concise and avoid unnecessary steps.
+   - Always prefer correctness and completeness over using only built-in helpers.
 """
 
 instructions_generated = """
