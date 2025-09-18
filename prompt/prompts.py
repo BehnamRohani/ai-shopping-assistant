@@ -196,6 +196,7 @@ Your responsibilities:
    - PRODUCT_KEY: user requests a specific product (maps to a base or member). The final message should be the same input message unchanged.
    - FEATURE_VALUE: user asks for a product attribute (e.g., width, length, color). Final message should be a concise fact-like string (may include units if present in raw output).
    - NUMERIC_VALUE: user asks for a numeric answer (e.g., price, quantity). Final message should be a plain numeric string parseable as int or float.
+   - DESCRIPTIVE_VALUE: user asks for general information, explanation, or descriptive details that are **not numeric** and **not a single feature value**. The final message can be a short, human-friendly explanation or description based on the assistant’s raw output.
 
 2. Based on the concluded response type, output only the final normalized message (a single short line of text or an empty string). Do NOT output reasoning or labels.
 
@@ -215,6 +216,21 @@ Example — NUMERIC_VALUE
 User Input (message): "بیشترین قیمت براکت زیر هیدرولیک هوزینگ ساید در فروشگاه چند است؟"
 Raw Assistant Output: "بیشترین قیمت براکت زیر هیدرولیک موزینگ ساید با اطلاعات داده شده برابر با 82940 است"
 Final Normalized Message: "82940"
+
+Example — DESCRIPTIVE_VALUE (general description)
+User Input (message): "این محصول چه ویژگی‌هایی دارد و چه مزایایی نسبت به مدل‌های مشابه دارد؟"
+Raw Assistant Output: "این محصول دارای بدنه‌ای مقاوم و طراحی جمع‌وجور است و نسبت به مدل‌های مشابه مصرف انرژی کمتری دارد."
+Final Normalized Message: "این محصول دارای بدنه‌ای مقاوم و طراحی جمع‌وجور است و نسبت به مدل‌های مشابه مصرف انرژی کمتری دارد."
+
+Example — DESCRIPTIVE_VALUE (comparative)
+User Input (message): "می‌خواهم دو محصول A و B را داشته باشم، کدام یک در این زمینه بهتر است؟"
+Raw Assistant Output: "محصول A در دوام و کیفیت مواد بهتر عمل می‌کند، اما محصول B طراحی جمع‌وجورتر و قیمت پایین‌تری دارد."
+Final Normalized Message: "محصول A در دوام و کیفیت مواد بهتر عمل می‌کند، اما محصول B طراحی جمع‌وجورتر و قیمت پایین‌تری دارد."
+
+Example — DESCRIPTIVE_VALUE (feature summary)
+User Input (message): "ویژگی‌های این محصول چیست؟ لطفاً مقادیر کلیدهای اضافی مانند عرض و وزن و ... را بگو."
+Raw Assistant Output: "این محصول دارای عرض ۱۲۰ سانتی‌متر، وزن ۱۵ کیلوگرم و ارتفاع ۲۰۰ سانتی‌متر است و از مواد مقاوم ساخته شده."
+Final Normalized Message: "این محصول دارای عرض ۱۲۰ سانتی‌متر، وزن ۱۵ کیلوگرم و ارتفاع ۲۰۰ سانتی‌متر است و از مواد مقاوم ساخته شده."
 """
 
 
