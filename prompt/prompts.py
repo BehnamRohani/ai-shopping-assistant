@@ -67,15 +67,29 @@ Example: Features may be width (عرض), height (ارتفاع), size (انداز
 tools_info = """
 You have access to the following tools:
 
-1. execute_sql(query: str) -> list[RealDictRow]: Executes a PostgreSQL query and returns results.
-2. generate_sql_query(instruction: str) -> tuple[str, str]: Generates a PostgreSQL query from natural language.
-3. build_like_query(table_name: str, column_name: str, variable_query: str, limit: int = 10) -> str:
-   Returns a SQL query string that searches for rows in a table where a column contains a given substring (case-insensitive).
-   I would suggest to let limit be at least 3.
+1. build_exact_query_and_execute(table_name: str, column_name: str, variable_query: str, limit: int = 10, columns: list[str] | None = None) -> list[RealDictRow] | str:
+   Builds and executes a SQL query that searches for rows where a column exactly matches
+   the given value. You can specify which columns to return. Enforces a minimum limit of 1.
+
+2. build_like_query_and_execute(table_name: str, column_name: str, variable_query: str, limit: int = 10, columns: list[str] | None = None) -> list[RealDictRow] | str:
+   Builds and executes a SQL query that searches for rows where a column contains
+   a given substring (case-insensitive). You can specify which columns to return.
+   Enforces a minimum limit of 3.
+   
+3. generate_sql_query(instruction: str) -> tuple[str, str]: 
+   Generates a PostgreSQL query from natural language.
+
+4. execute_sql(query: str) -> list[RealDictRow]: 
+   Executes a PostgreSQL query and returns results.
+
+### Priority:
+- Use `generate_sql_query` only when a query cannot be expressed through the built-in query helpers.
 """
+
 
 rules_initial = """
 ### Rules:
+- Give the plan in English.
 - Think step by step:
   0. Translate the Persian to English and be careful to translate crucial words correctly. 
   Most final operations are done on Persian names and this translation is only supposed to help you think better.
@@ -92,8 +106,10 @@ rules_initial = """
 """
 
 instructions_generated = """
-  2. Execute SQL if necessary.
-  3. Fill the Pydantic response for your final answer.
+  1. Use SQL tools if necessary.
+  2. Fill the Pydantic response for your final answer.
+  3. base_random_keys should only be filled if user asks for product(s). And member_random_keys should only be filled if user
+  asks for shop(s). So there is no need, for example, to fill member_random_keys if user is only after a product.
 """
 
 system_role_initial = """

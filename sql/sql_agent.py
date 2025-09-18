@@ -1,4 +1,4 @@
-from pydantic_ai import Agent
+from pydantic_ai import Agent, ModelSettings
 import httpx
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
@@ -20,6 +20,7 @@ client = OpenAIChatModel(
         api_key=OPENAI_API_KEY,
         http_client=httpx.AsyncClient()
     ),
+    settings=ModelSettings(temperature=0.001, max_tokens=1024)
 )
 
 # -------------------------------

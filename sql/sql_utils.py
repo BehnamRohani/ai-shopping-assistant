@@ -14,9 +14,69 @@ DB_CONFIG = {
     "password": os.getenv("DB_PASSWORD"),
 }
 
-def build_like_query(table_name: str, column_name: str, variable_query: str, limit: int = 10):
+def build_exact_query_and_execute(
+    table_name: str,
+    column_name: str,
+    variable_query: str,
+    limit: int = 10,
+    columns: list[str] | None = None,
+):
     """
-    Build a parameterized SQL query for searching a table where a column
+    Build and execute a SQL query for searching a table where a column
+    exactly matches a given value.
+
+    Parameters
+    ----------
+    table_name : str
+        Name of the table to query.
+    column_name : str
+        Name of the column to filter on.
+    variable_query : str
+        Exact value to match.
+    limit : int, optional
+        Maximum number of rows to return (default is 10). Must be >= 1.
+    columns : list[str], optional
+        List of column names to return. Defaults to ["*"].
+
+    Returns
+    -------
+    list[RealDictRow] | str
+        Query results if successful, or error string if execution fails.
+    """
+    if limit < 3:
+        limit = 1  # enforce minimum
+
+    if not columns:
+        columns = ["*"]
+
+    cols_str = ", ".join(columns)
+
+    query = f"""
+    SELECT {cols_str}
+    FROM {table_name}
+    WHERE {column_name} = %s
+    LIMIT %s;
+    """
+    params = (variable_query, limit)
+
+    try:
+        with psycopg2.connect(**DB_CONFIG) as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(query, params)
+                return cur.fetchall()
+    except Exception as e:
+        return f"-- ERROR executing query: {str(e)}"
+
+
+def build_like_query_and_execute(
+    table_name: str,
+    column_name: str,
+    variable_query: str,
+    limit: int = 10,
+    columns: list[str] | None = None,
+):
+    """
+    Build and execute a SQL query for searching a table where a column
     contains a given substring (case-insensitive).
 
     Parameters
@@ -28,22 +88,39 @@ def build_like_query(table_name: str, column_name: str, variable_query: str, lim
     variable_query : str
         Substring to search for.
     limit : int, optional
-        Maximum number of rows to return (default is 10).
+        Maximum number of rows to return (default is 10). Must be >= 3.
+    columns : list[str], optional
+        List of column names to return. Defaults to ["*"].
 
     Returns
     -------
-    tuple[str, tuple]
-        - query: The parameterized SQL query string.
-        - params: Tuple of parameters to pass to execute() (pattern, limit).
+    list[RealDictRow] | str
+        Query results if successful, or error string if execution fails.
     """
+    if limit < 3:
+        limit = 3  # enforce minimum
+
+    if not columns:
+        columns = ["*"]
+
+    cols_str = ", ".join(columns)
     pattern = f"%{variable_query}%"
+
     query = f"""
-    SELECT *
+    SELECT {cols_str}
     FROM {table_name}
-    WHERE {column_name} ILIKE '{pattern}'
-    LIMIT {limit};
+    WHERE {column_name} ILIKE %s
+    LIMIT %s;
     """
-    return query
+    params = (pattern, limit)
+
+    try:
+        with psycopg2.connect(**DB_CONFIG) as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute(query, params)
+                return cur.fetchall()
+    except Exception as e:
+        return f"-- ERROR executing query: {str(e)}"
 
 
 # -------------------------------

@@ -22,11 +22,11 @@ from typing import List, Optional, Tuple, Dict, Any
 from pydantic import BaseModel
 from dotenv import load_dotenv
 import httpx
-from pydantic_ai import Agent
+from pydantic_ai import Agent, UsageLimits, ModelSettings
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from sql.sql_agent import generate_sql_query
-from sql.sql_utils import execute_sql, build_like_query
+from sql.sql_utils import execute_sql, build_like_query_and_execute, build_exact_query_and_execute
 from prompt.prompts import *
 
 
@@ -54,6 +54,7 @@ client = OpenAIChatModel(
         api_key=OPENAI_API_KEY,
         http_client=httpx.AsyncClient()
     ),
+    settings=ModelSettings(temperature=0.001, max_tokens=1024)
 )
 
 cot_agent = Agent(
@@ -82,9 +83,14 @@ shopping_agent = Agent(
     system_prompt=system_prompt.format(system_role = system_role,
                                         tools = tools_info, 
                                        rules = instructions_generated),
-    tools=[execute_sql, generate_sql_query, build_like_query],
-    output_type=ShoppingResponse  # Pydantic handles validation/parsing automatically
+    tools=[build_exact_query_and_execute,
+           build_like_query_and_execute, 
+           generate_sql_query,
+           execute_sql,],
+    output_type=ShoppingResponse,  # Pydantic handles validation/parsing automatically
 )
+
+usage_limits = UsageLimits(request_limit=10, tool_calls_limit=10, output_tokens_limit=4096)
 
 async def run_shopping_agent(
     instruction: str
@@ -97,8 +103,10 @@ async def run_shopping_agent(
     try:
         plan_output = await cot_agent.run(instruction)
         print(plan_output.output)
-        prompt = instruction + "\n\n" + plan_output.output
-        result = await shopping_agent.run(prompt)
+        prompt = "Input: " + instruction + "\n\n" + plan_output.output
+        result = await shopping_agent.run(prompt,
+                                usage_limits = usage_limits,
+                                )
         return result
     except Exception as e:
         return ShoppingResponse(
