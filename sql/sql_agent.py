@@ -3,44 +3,12 @@ import httpx
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 import os
-from sql_utils import extract_sql
+from sql.sql_utils import extract_sql
+from prompt.prompts import system_prompt_sql
 
 OPENAI_API_KEY = os.environ['API_KEY']
 BASE_URL = os.environ['BASE_URL']
 MODEL_NAME = "gpt-4.1-mini"
-
-# -------------------------------
-# SYSTEM PROMPT
-# -------------------------------
-system_prompt = """
-You are an expert SQL assistant for torob.com. 
-Your job is to generate **PostgreSQL SQL queries** from user instructions. 
-
-### Guidelines:
-- Always return valid PostgreSQL queries.
-- Use only the tables and columns provided in the schema.
-- Do not invent columns or tables that do not exist.
-- Use clear aliases where useful.
-- Join tables only when logically necessary.
-- Prefer descriptive SELECT clauses over SELECT *.
-- Always think step by step about the schema before writing the query.
-
-### Database Schema:
-Tables and their columns:
-
-1. searches(id, uid, query, page, timestamp, session_id, result_base_product_rks, category_id, category_brand_boosts)
-2. base_views(id, search_id, base_product_rk, timestamp)
-3. final_clicks(id, base_view_id, shop_id, timestamp)
-4. base_products(random_key, persian_name, english_name, category_id, brand_id, extra_features, image_url, members)
-5. members(random_key, base_random_key, shop_id, price)
-6. shops(id, city_id, score, has_warranty)
-7. categories(id, title, parent_id)
-8. brands(id, title)
-9. cities(id, name)
-
-### Output Format:
-ALWAYS wrap the sql code in ```sql```.
-"""
 
 # -------------------------------
 # Define the model with custom base URL, API key, and model name
@@ -60,7 +28,7 @@ client = OpenAIChatModel(
 sql_agent = Agent(
     name="TorobSQLAgent",
     model=client,
-    system_prompt=system_prompt,
+    system_prompt=system_prompt_sql,
 )
 
 
