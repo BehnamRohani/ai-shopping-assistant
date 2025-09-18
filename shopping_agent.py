@@ -35,11 +35,11 @@ load_dotenv()
 
 # DB config from environment (ensure these are in your .env)
 DB_CONFIG = {
-    "host": os.getenv("DB_HOST", "81.12.30.45"),
-    "port": int(os.getenv("DB_PORT", 29616)),
-    "dbname": os.getenv("DB_NAME", "postgres"),
-    "user": os.getenv("DB_USER", "postgres"),
-    "password": os.getenv("DB_PASSWORD", "80aEx2MQtiWSlrWmPB16"),
+    "host": os.getenv("DB_HOST", ""),
+    "port": int(os.getenv("DB_PORT", 0)),
+    "dbname": os.getenv("DB_NAME", ""),
+    "user": os.getenv("DB_USER", ""),
+    "password": os.getenv("DB_PASSWORD", ""),
 }
 
 MODEL_NAME = "gpt-4.1-mini"
