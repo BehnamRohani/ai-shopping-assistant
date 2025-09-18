@@ -94,14 +94,22 @@ rules_initial = """
   0. Translate the Persian to English and be careful to translate crucial words correctly. 
   Most final operations are done on Persian names and this translation is only supposed to help you think better.
   1. What does the user want? What is the task that I have to perform?
+     Example (for product):
+            + If user has described a product, what is the name of the product? Figure it out and extract it from input if possible.
+            + From your estimation of product name, get the base_random_key of that product
+            + Sometimes there are words in product name that can be mistaken for features or brand and cause confusion on your side. 
+            + Be careful of that occurrence. A product name may be too long and contain lots of things namely these features.
+            + Some Examples of product_names: 
+               ++ ست سطل و جای دستمال لالیپاپ مدل رنگین کمان
+               ++ سرویس قابلمه تفال مدل B459S984 ۹ پارچه آلومینیوم
+               ++ ظرف آبلیمو خوری الماس کاران مدل آیس بسته 2 عددی
+               ++ تابلو خندالو طرح گوجو ساتورو انیمه جوجوتسو کایزن
+               ++ کولر گازی گرین مدل SVK-CH48F3C3R1 ظرفیت ۴۸ هزار
+               ++ شال مبل مدل کرکره ای پلیسه کد 061 سایز 220×200 سانتی متر به همراه کوسن
   2. Which parts of output should you fill? (message, base_random_keys, member_random_keys) Which ones should be null?
   3. What subtasks does this task have? Break it down into small steps.
-  4. What are necessary tools to perform each subtasks of this task? Which query is needed and which tools to use.
-  5. Explain the path as to how the task can be done using the tools at hand from the beginning to the end.
 
   NOTES: 
-  - Sometimes there are words in product name that can be mistaken for features or brand and cause confusion on your side. 
-  Be careful of that occurrence. A product name may be too long and contain lots of things namely these features.
   - Be concise as much as possible and don't make things more convoluted than necessary.
 """
 
@@ -110,7 +118,7 @@ instructions_generated = """
   2. Fill the Pydantic response for your final answer.
   3. base_random_keys should only be filled if user asks for product(s). And member_random_keys should only be filled if user
   asks for shop(s). So there is no need, for example, to fill member_random_keys if user is only after a product.
-  4. message field should only contain information requested by the user. Avoid long messages and only give what's requested.
+  4. message field should only contain desired information requested by the user. Avoid long messages and only give what's requested.
 """
 
 system_role_initial = """
