@@ -76,7 +76,8 @@ async def chat(req: ChatRequest):
         return resp
     
 
-    _, output_dict = await run_shopping_agent(content)
+    _, output_dict = await run_shopping_agent(instruction = content, 
+                                              use_initial_plan = False)
 
     print(output_dict)
 

@@ -122,7 +122,6 @@ instructions_generated = """
    - member_random_keys: list of random_key(s) for shops (only if user is asking about shops).
 2. base_random_keys should always contain the **final product(s) the user actually requested**. Do not include intermediate results or related products unless explicitly asked.
 3. Keep the `message` concise, containing only the requested information. No extra commentary.
-
 """
 
 system_role_initial = """
