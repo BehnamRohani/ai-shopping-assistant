@@ -97,8 +97,6 @@ rules_initial = """
      Example (for product):
             + If user has described a product, what is the name of the product? Figure it out and extract it from input if possible.
             + From your estimation of product name, get the base_random_key of that product
-            + Sometimes there are words in product name that can be mistaken for features or brand and cause confusion on your side. 
-            + Be careful of that occurrence. A product name may be too long and contain lots of things namely these features.
             + Some Examples of product_names: 
                ++ ست سطل و جای دستمال لالیپاپ مدل رنگین کمان
                ++ سرویس قابلمه تفال مدل B459S984 ۹ پارچه آلومینیوم
