@@ -49,7 +49,7 @@ async def chat(req: ChatRequest):
     # very small defensive check
     if not req.messages:
         resp = ChatResponse(message=None, base_random_keys=None, member_random_keys=None)
-        return resp
+        return dict(resp)
 
     last = req.messages[-1]
     content = last.content.strip()
@@ -57,14 +57,14 @@ async def chat(req: ChatRequest):
     # 1) ping
     if last.type == "text" and content == "ping":
         resp = ChatResponse(message="pong", base_random_keys=None, member_random_keys=None)
-        return resp
+        return dict(resp)
 
     # 2) return base random key
     m_base = RE_BASE.search(content)
     if m_base:
         key = m_base.group(1)
         resp = ChatResponse(message=None, base_random_keys=[key], member_random_keys=None)
-        return resp
+        return dict(resp)
 
     # 3) return member random key
     m_member = RE_MEMBER.search(content)
@@ -76,6 +76,4 @@ async def chat(req: ChatRequest):
 
     result = await run_shopping_agent(content)
 
-    # default fallback
-    resp = ChatResponse(**dict(result.output))
-    return resp
+    return dict(result.output)
