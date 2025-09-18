@@ -46,6 +46,8 @@ RE_MEMBER = re.compile(r"return member random key:\s*([A-Za-z0-9\-_:]+)", re.IGN
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
 
+    print(dict(req))
+
     # very small defensive check
     if not req.messages:
         resp = ChatResponse(message=None, base_random_keys=None, member_random_keys=None)
@@ -75,5 +77,7 @@ async def chat(req: ChatRequest):
     
 
     result = await run_shopping_agent(content)
+
+    print(dict(result.output))
 
     return dict(result.output)
