@@ -28,6 +28,7 @@ from pydantic_ai.providers.openai import OpenAIProvider
 from sql.sql_agent import generate_sql_query
 from sql.sql_utils import execute_sql, build_like_query_and_execute, build_exact_query_and_execute
 from prompt.prompts import *
+from utils import preprocess_persian
 
 
 # load environment
@@ -112,9 +113,10 @@ async def run_shopping_agent(
     Returns a validated ShoppingResponse and raw model output.
     """
     try:
-        plan_output = await cot_agent.run(instruction)
+        preprocessed_instruction = preprocess_persian(instruction)
+        plan_output = await cot_agent.run(preprocessed_instruction)
         print(plan_output.output)
-        prompt = "Input: " + instruction + "\n\n" + plan_output.output
+        prompt = "Input: " + preprocessed_instruction + "\n\n" + plan_output.output
         result = await shopping_agent.run(prompt,
                                 usage_limits = usage_limits,
                                 )
