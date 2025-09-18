@@ -8,7 +8,7 @@ from prompt.prompts import system_prompt_sql
 
 OPENAI_API_KEY = os.environ['API_KEY']
 BASE_URL = os.environ['BASE_URL']
-SQL_MODEL = os.envrion['SQL_MODEL']
+SQL_MODEL = os.environ['SQL_MODEL']
 
 # -------------------------------
 # Define the model with custom base URL, API key, and model name
