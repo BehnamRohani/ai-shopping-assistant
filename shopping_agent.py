@@ -119,7 +119,7 @@ parser_agent = Agent(
     system_prompt=parser_system_prompt,
 )
 
-usage_limits = UsageLimits(request_limit=10, tool_calls_limit=10, output_tokens_limit=4096)
+usage_limits = UsageLimits(request_limit=30, tool_calls_limit=30, output_tokens_limit=4096)
 
 from typing import Tuple, Optional
 

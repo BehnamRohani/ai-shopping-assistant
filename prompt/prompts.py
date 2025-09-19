@@ -70,17 +70,23 @@ You have access to the following tools:
 1. build_exact_query_and_execute(table_name: str, column_name: str, variable_query: str, limit: int = 10, columns: list[str] | None = None) -> list[RealDictRow] | str:
    Builds and executes a SQL query that searches for rows where a column exactly matches
    the given value. You can specify which columns to return. Enforces a minimum limit of 1.
+   → Use when you are confident you have the full exact product name.  
+   ⚠️ If no match is found, do **not** stop — fallback to LIKE search.  
 
 2. build_like_query_and_execute(table_name: str, column_name: str, variable_query: str, limit: int = 10, columns: list[str] | None = None) -> list[RealDictRow] | str:
    Builds and executes a SQL query that searches for rows where a column contains
    a given substring (case-insensitive). You can specify which columns to return.
    Enforces a minimum limit of 3.
+   → Use when the product name may differ slightly (extra words, spacing, spelling).  
+   ⚠️ Must return at least 3 rows, so always set limit >= 3.  
    
 3. generate_sql_query(instruction: str) -> tuple[str, str]: 
    Generates a PostgreSQL query from natural language.
+   → Use for complex requests (aggregations, computations).  
 
 4. execute_sql(query: str) -> list[RealDictRow]: 
    Executes a PostgreSQL query and returns results.
+   → Run SQL directly (your own query or one produced by `generate_sql_query`).  
 """
 
 
@@ -103,12 +109,12 @@ rules_initial = """
 3. Break down into only the subtasks needed for that scenario. Do not do extra work.  
 
 ### SQL Query Guidelines:
-- Use `build_exact_query_and_execute` or `build_like_query_and_execute` only for simple lookups by name/id.  
 - For anything that requires **aggregation, computation, or statistics**  
   (lowest price, highest price, average, total stock, shop counts, sums, etc.),  
   either:  
     • write the full SQL query yourself and run it with `execute_sql`, or  
     • use `generate_sql_query` to create the SQL, then run it with `execute_sql`.  
+- Use `build_exact_query_and_execute` or `build_like_query_and_execute` only for simple lookups by name/id.
 
 ### Notes:
 - Always answer directly to the user’s intent.  
@@ -124,6 +130,26 @@ instructions_generated = """
    - member_random_keys: list of random_key(s) for shops (only if user is asking about shops).
 2. base_random_keys should always contain the **final product(s) the user actually requested**. Do not include intermediate results or related products unless explicitly asked.
 3. Keep the `message` concise, containing only the requested information. No extra commentary.
+
+### SQL Query Guidelines:
+- For anything that requires **aggregation, computation, or statistics**  
+  (lowest price, highest price, average, total stock, shop counts, sums, etc.),  
+  either:  
+    • write the full SQL query yourself and run it with `execute_sql`, or  
+    • use `generate_sql_query` to create the SQL, then run it with `execute_sql`.  
+- Use `build_exact_query_and_execute` or `build_like_query_and_execute` only for simple lookups by name/id.  
+
+## Important: Never give up too soon.  
+- Product names may not match user text exactly.  
+- In order to get the random_key of a product from the supposed name (a simple query), always try progressively:  
+  1. First attempt: `build_exact_query_and_execute` if you think you have a clean match.  
+  2. If no result: retry with `build_like_query_and_execute` using key parts of the product name.  
+  3. If still no result: consider synonyms, shortened forms, or partial brand/model extraction.  
+- Only after multiple reasonable attempts can you conclude a product truly does not exist.  
+
+Notes:  
+- Many failures happen because the product name is slightly different in the DB.  
+- Your job is to find the closest match, not to stop early.  
 """
 
 system_role_initial = """
