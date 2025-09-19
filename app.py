@@ -8,6 +8,7 @@ from typing import List, Optional, Literal
 from datetime import datetime
 
 from fastapi import FastAPI, HTTPException
+from fastapi import Request
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from shopping_agent import run_shopping_agent
@@ -26,8 +27,6 @@ DB_CONFIG = {
     "user": os.getenv("DB_USER"),
     "password": os.getenv("DB_PASSWORD"),
 }
-
-app = FastAPI()
 
 # ------ Database Helpers ------
 def get_db_conn():
@@ -62,10 +61,18 @@ def insert_log(input_data: dict, output_data: dict):
     except Exception as e:
         print(f"[ERROR] Failed to insert log: {e}")
 
-# Run on startup
-@app.on_event("startup")
-def startup_event():
+# ------ Lifespan Context ------
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
     init_logs_table()
+    yield
+    # Shutdown (if needed)
+    # e.g., close connections
+
+app = FastAPI(lifespan=lifespan)
 
 # ------ Pydantic models ------
 class Message(BaseModel):
@@ -89,13 +96,13 @@ RE_MEMBER = re.compile(r"return member random key:\s*([A-Za-z0-9\-_:]+)", re.IGN
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     try:
-        input_dict = req.dict()
+        input_dict = req.model_dump()
         print("[INPUT]", input_dict)
 
         # very small defensive check
         if not req.messages:
             resp = ChatResponse()
-            insert_log(input_dict, resp.dict())
+            insert_log(input_dict, resp.model_dump())
             return resp
 
         last = req.messages[-1]
@@ -104,7 +111,7 @@ async def chat(req: ChatRequest):
         # 1) ping
         if last.type == "text" and content == "ping":
             resp = ChatResponse(message="pong")
-            insert_log(input_dict, resp.dict())
+            insert_log(input_dict, resp.model_dump())
             return resp
 
         # 2) return base random key
@@ -112,7 +119,7 @@ async def chat(req: ChatRequest):
         if m_base:
             key = m_base.group(1)
             resp = ChatResponse(base_random_keys=[key])
-            insert_log(input_dict, resp.dict())
+            insert_log(input_dict, resp.model_dump())
             return resp
 
         # 3) return member random key
@@ -120,7 +127,7 @@ async def chat(req: ChatRequest):
         if m_member:
             key = m_member.group(1)
             resp = ChatResponse(member_random_keys=[key])
-            insert_log(input_dict, resp.dict())
+            insert_log(input_dict, resp.model_dump())
             return resp
 
         # 4) shopping agent
