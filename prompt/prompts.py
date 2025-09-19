@@ -86,33 +86,35 @@ You have access to the following tools:
 
 rules_initial = """
 ### Rules:
-- Give the plan in English.
-- Think step by step:
-  0. Translate the Persian to English and be careful to translate crucial words correctly. 
-  Most final operations are done on Persian names and this translation is only supposed to help you think better.
-  1. What does the user want? What is the task that I have to perform?
-     Example (for product):
-            + If user has described a product, what is the name of the product? Figure it out and extract it from input if possible.
-            + From your estimation of product name, get the base_random_key of that product
-            + Some Examples of product_names: 
-               ++ ست سطل و جای دستمال لالیپاپ مدل رنگین کمان
-               ++ سرویس قابلمه تفال مدل B459S984 ۹ پارچه آلومینیوم
-               ++ ظرف آبلیمو خوری الماس کاران مدل آیس بسته 2 عددی
-               ++ تابلو خندالو طرح گوجو ساتورو انیمه جوجوتسو کایزن
-               ++ کولر گازی گرین مدل SVK-CH48F3C3R1 ظرفیت ۴۸ هزار
-               ++ شال مبل مدل کرکره ای پلیسه کد 061 سایز 220×200 سانتی متر به همراه کوسن
-  2. Which parts of output should you fill? (message, base_random_keys, member_random_keys) Which ones should be null?
-  3. What subtasks does this task have? Break it down into small steps.
+- Give the plan in a few short sentences in English.  
+- Think step by step, but keep it concise.  
 
-  ### SQL Query Guidelines:
-   - Prefer `build_exact_query_and_execute` or `build_like_query_and_execute` **only for simple searches** like finding products by id or name or substring matches.
-   - **For any request that requires aggregation, computation, or statistics** (e.g., lowest price, highest price, average price, number of shops, stock counts, totals, or other calculations), **you MUST use `generate_sql_query` to create a custom SQL query**, then execute it with `execute_sql`.
-   - You may combine multiple helper tools if necessary, but **do not force simple helpers to handle tasks they cannot do accurately**.
-   - Always ensure the generated SQL is correct and matches the user’s request precisely.
+0. Translate Persian to English only to understand better.  
+   *Important: final operations must still use Persian names.*  
+1. Identify user intent clearly:  
+   - Is the user asking for **a specific product base**?  
+   - Or for **a property/attribute of that product**?  
+   - Or for **seller/shop-related information about that product**?  
+2. Decide which output fields to fill:  
+   - If intent is **find product base** → fill `base_random_keys` (max 1).  
+   - If intent is **get product attribute** → fill `message`.  
+   - If intent is **shop/seller info (e.g., lowest price, number of shops)** → fill `message`.  
+   - Leave others (`member_random_keys` or `base_random_keys`) **null** if not required.  
+3. Break down into only the subtasks needed for that scenario. Do not do extra work.  
 
-   ### Notes:
-   - Be concise and avoid unnecessary steps.
-   - Always prefer correctness and completeness over using only built-in helpers.
+### SQL Query Guidelines:
+- Use `build_exact_query_and_execute` or `build_like_query_and_execute` only for simple lookups by name/id.  
+- For anything that requires **aggregation, computation, or statistics**  
+  (lowest price, highest price, average, total stock, shop counts, sums, etc.),  
+  either:  
+    • write the full SQL query yourself and run it with `execute_sql`, or  
+    • use `generate_sql_query` to create the SQL, then run it with `execute_sql`.  
+
+### Notes:
+- Always answer directly to the user’s intent.  
+- Keep the plan short, avoid extra steps.  
+- Never add member/shop details unless explicitly asked.  
+
 """
 
 instructions_generated = """
