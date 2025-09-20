@@ -100,7 +100,6 @@ async def chat(req: ChatRequest):
         print("[INPUT]", input_dict)
 
         # if input_dict['chat_id'] == 'retrieve_embed':
-        #     from query_vdb import retrieve_from_vector_db
         #     message = input_dict['message']
         #     values = retrieve_from_vector_db(message)
         #     return ChatResponse(message=",".join([v['persian_name'] for v in values]), 

@@ -28,7 +28,7 @@ QDRANT_PATH = data_path + "qdrant_db"
 COLLECTION_NAME = "products"
 EMBED_MODEL = "text-embedding-3-small"  # 1536 dims
 VECTOR_DIM = 1536
-BATCH_SIZE = 2000
+BATCH_SIZE = 100
 CHECKPOINT_FILE = data_path + "qdrant_last_key.txt"
 # -------------------------
 
