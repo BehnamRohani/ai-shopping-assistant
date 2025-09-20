@@ -94,18 +94,12 @@ class ChatResponse(BaseModel):
 RE_BASE = re.compile(r"return base random key:\s*([A-Za-z0-9\-_:]+)", re.IGNORECASE)
 RE_MEMBER = re.compile(r"return member random key:\s*([A-Za-z0-9\-_:]+)", re.IGNORECASE)
 
-EMBEDDING_CODE = 'embedding_qdrant_initialization-CODE554242fwrh2j42hj41589'
-
 # ------ Endpoint ------
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
     try:
         input_dict = req.model_dump()
         print("[INPUT]", input_dict)
-
-        if input_dict['chat_id'] == EMBEDDING_CODE:
-            await create_embedding()
-            return ChatResponse()
 
         # very small defensive check
         if not req.messages:
