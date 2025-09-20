@@ -12,7 +12,7 @@ from fastapi import Request
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from shopping_agent import run_shopping_agent
-from similarity_search_db import similarity_search
+from sql.similarity_search_db import similarity_search
 
 # Load environment variables
 load_dotenv()
