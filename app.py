@@ -13,8 +13,6 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 from shopping_agent import run_shopping_agent
 
-from vector_db_initializiation import create_embedding
-
 # Load environment variables
 load_dotenv()
 
