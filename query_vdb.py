@@ -22,7 +22,7 @@ DB_CONFIG = {
 # -------------------------
 # CONFIG
 # -------------------------
-QDRANT_PATH = "./notebooks/qdrant_db"  # local disk folder
+QDRANT_PATH = "./data/qdrant_db"  # local disk folder
 COLLECTION_NAME = "products"
 EMBED_MODEL = "text-embedding-3-small"
 OPENAI_API_KEY = os.getenv("API_KEY")
