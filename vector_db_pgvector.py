@@ -4,6 +4,10 @@ import psycopg2
 from openai import OpenAI
 from tqdm import tqdm
 import psycopg2
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 # --- Configuration ---
 DB_CONFIG = {
