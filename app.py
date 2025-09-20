@@ -12,6 +12,7 @@ from fastapi import Request
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from shopping_agent import run_shopping_agent
+from similarity_search_db import similarity_search
 
 # Load environment variables
 load_dotenv()
@@ -99,14 +100,22 @@ async def chat(req: ChatRequest):
         input_dict = req.model_dump()
         print("[INPUT]", input_dict)
 
+        last = req.messages[-1]
+        content = last.content.strip()
+
+        # Similarity Search DB
+        if input_dict['chat_id'] == 'retrieve_similar':
+            results = similarity_search(content, top_k = 5)
+            rks = [res[0] for res in results]
+            names = [res[1] for res in results]
+            resp = ChatResponse(message = "\n".join(names), base_random_keys=rks)
+            return resp
+
         # very small defensive check
         if not req.messages:
             resp = ChatResponse()
             insert_log(input_dict, resp.model_dump())
             return resp
-
-        last = req.messages[-1]
-        content = last.content.strip()
 
         # 1) ping
         if last.type == "text" and content == "ping":
