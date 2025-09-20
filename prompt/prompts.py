@@ -133,7 +133,7 @@ instructions_generated = """
   either:  
     • write the full SQL query yourself and run it with `execute_sql`, or  
     • use `generate_sql_query` to create the SQL, then run it with `execute_sql`.  
-- Use `similarity_search` to resolve product references from user text.  
+- Use `similarity_search` to retrieve base_random_key and resolve product references from user text.  
 
 ## Important: Interpreting similarity_search results
 - Always use `similarity_search` with the given query to resolve product names.  
