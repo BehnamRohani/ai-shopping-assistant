@@ -19,7 +19,7 @@ DB_CONFIG = {
     "user": os.getenv("DB_USER"),
     "password": os.getenv("DB_PASSWORD"),
 }
-data_path = "./var/lib/data/"
+data_path = "./data/"
 QDRANT_PATH = data_path + "qdrant_db"
 COLLECTION_NAME = "products"
 EMBED_MODEL = "text-embedding-3-small"  # 1536 dims
