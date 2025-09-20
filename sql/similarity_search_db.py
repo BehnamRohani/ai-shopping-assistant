@@ -43,6 +43,8 @@ def similarity_search(query, top_k=5):
         List of tuples: [(random_key, persian_name, similarity_score), ...]
     """
     query_vector = get_embedding(query)
+    query_vector_str = "[" + ",".join(map(str, query_vector)) + "]"
+
 
     results = []
     with psycopg2.connect(**DB_CONFIG) as conn:
@@ -53,7 +55,7 @@ def similarity_search(query, top_k=5):
                 FROM product_embed
                 ORDER BY embedding <=> %s
                 LIMIT %s
-            """, (query_vector, query_vector, top_k))
+            """, (query_vector_str, query_vector_str, top_k))
             
             results = cur.fetchall()
 
