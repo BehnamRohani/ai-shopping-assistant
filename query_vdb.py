@@ -85,36 +85,14 @@ def get_persian_name_from_db(random_key):
         return None
 
 
-while True:
-    try:
-        query = input("\nEnter your query (or type 'exit' to quit): ").strip()
-        if query.lower() in ("exit", "quit"):
-            print("Exiting.")
-            break
-        if not query:
-            print("Empty query. Try again.")
-            continue
-
-        results = vector_store.similarity_search(query, k=TOP_K)
-
-        if not results:
-            print("No results found.")
-            continue
-
-        print(f"\nTop {TOP_K} similar names:")
-        for i, doc in enumerate(results, start=1):
-            # Try to get Persian name, fallback to deriving from DB
-            name = doc.metadata.get("persian_name")
-            if not name:
-                try:
-                    # Replace this with your actual DB lookup function
-                    name = get_persian_name_from_db(doc.metadata.get("random_key"))
-                except Exception as e:
-                    name = "N/A"
-                    print(f"Error deriving Persian name for random_key {doc.metadata.get('random_key')}: {e}")
-
-            rk = doc.metadata.get("random_key", "N/A")
-            print(f"{i}. {name}  (random_key: {rk})")
-
-    except Exception as e:
-        print(f"An error occurred during the query: {e}")
+def retrieve_from_vector_db(query: str, top_k: int = TOP_K):
+    results = vector_store.similarity_search(query, k=top_k)
+    values = []
+    for _, doc in enumerate(results, start=1):
+        meta_data = {}
+        name = get_persian_name_from_db(doc.metadata.get("random_key"))
+        rk = doc.metadata.get("random_key")
+        meta_data['persian_name'] = name
+        meta_data['random_key'] = rk
+        values.append(meta_data)
+    return values
