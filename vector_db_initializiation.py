@@ -3,7 +3,7 @@ from pathlib import Path
 import psycopg2
 from tqdm import tqdm
 
-from qdrant_client import QdrantClient
+from qdrant_client import QdrantClient, models
 from qdrant_client.http.models import VectorParams, Distance
 
 from langchain_openai import OpenAIEmbeddings
@@ -57,6 +57,12 @@ if not client.collection_exists(COLLECTION_NAME):
     client.create_collection(
         collection_name=COLLECTION_NAME,
         vectors_config=VectorParams(size=VECTOR_DIM, distance=Distance.COSINE),
+        on_disk_payload= True,
+        quantization_config=models.ScalarQuantization(
+            scalar=models.ScalarQuantizationConfig(
+                type=models.ScalarType.INT8,
+                quantile=0.99),
+        ),
     )
     print(f"Created collection {COLLECTION_NAME} with dim={VECTOR_DIM}")
 else:
