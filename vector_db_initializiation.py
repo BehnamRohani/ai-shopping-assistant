@@ -79,36 +79,37 @@ def save_checkpoint(val):
 # -------------------------
 # Main ingestion
 # -------------------------
-conn = psycopg2.connect(**DB_CONFIG)
-cur = conn.cursor(name="product_cursor")
-cur.itersize = BATCH_SIZE
+async def create_embedding():
+    conn = psycopg2.connect(**DB_CONFIG)
+    cur = conn.cursor(name="product_cursor")
+    cur.itersize = BATCH_SIZE
 
-last_key = load_checkpoint()
-if last_key:
-    print("Resuming from checkpoint:", last_key)
-    cur.execute(
-        "SELECT random_key, persian_name FROM base_products WHERE random_key > %s ORDER BY random_key ASC",
-        (last_key,),
-    )
-else:
-    cur.execute("SELECT random_key, persian_name FROM base_products ORDER BY random_key ASC")
+    last_key = load_checkpoint()
+    if last_key:
+        print("Resuming from checkpoint:", last_key)
+        cur.execute(
+            "SELECT random_key, persian_name FROM base_products WHERE random_key > %s ORDER BY random_key ASC",
+            (last_key,),
+        )
+    else:
+        cur.execute("SELECT random_key, persian_name FROM base_products ORDER BY random_key ASC")
 
-total = 0
-for batch in tqdm(iter(lambda: cur.fetchmany(BATCH_SIZE), []), desc="Batches", unit="batch"):
-    if not batch:
-        break
+    total = 0
+    for batch in tqdm(iter(lambda: cur.fetchmany(BATCH_SIZE), []), desc="Batches", unit="batch"):
+        if not batch:
+            break
 
-    texts = [row[1] for row in batch]
-    metadatas = [{"random_key": row[0]} for row in batch]
+        texts = [row[1] for row in batch]
+        metadatas = [{"random_key": row[0]} for row in batch]
 
-    # Insert into Qdrant via LangChain
-    vector_store.add_texts(texts=texts, metadatas=metadatas)
+        # Insert into Qdrant via LangChain
+        vector_store.add_texts(texts=texts, metadatas=metadatas)
 
-    # Save checkpoint
-    save_checkpoint(batch[-1][0])
-    total += len(batch)
-    print(f"Inserted {total} rows (last random_key={batch[-1][0]})", end="\r")
+        # Save checkpoint
+        save_checkpoint(batch[-1][0])
+        total += len(batch)
+        print(f"Inserted {total} rows (last random_key={batch[-1][0]})", end="\r")
 
-print("\nDone.")
-info = client.get_collection(COLLECTION_NAME)
-print("Collection size:", info.vectors_count)
+    print("\nDone.")
+    info = client.get_collection(COLLECTION_NAME)
+    print("Collection size:", info.vectors_count)
