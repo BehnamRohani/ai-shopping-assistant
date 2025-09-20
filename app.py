@@ -114,13 +114,13 @@ async def chat(req: ChatRequest):
         # very small defensive check
         if not req.messages:
             resp = ChatResponse()
-            insert_log(input_dict, resp.model_dump())
+            # insert_log(input_dict, resp.model_dump())
             return resp
 
         # 1) ping
         if last.type == "text" and content == "ping":
             resp = ChatResponse(message="pong")
-            insert_log(input_dict, resp.model_dump())
+            # insert_log(input_dict, resp.model_dump())
             return resp
 
         # 2) return base random key
@@ -128,7 +128,7 @@ async def chat(req: ChatRequest):
         if m_base:
             key = m_base.group(1)
             resp = ChatResponse(base_random_keys=[key])
-            insert_log(input_dict, resp.model_dump())
+            # insert_log(input_dict, resp.model_dump())
             return resp
 
         # 3) return member random key
@@ -136,7 +136,7 @@ async def chat(req: ChatRequest):
         if m_member:
             key = m_member.group(1)
             resp = ChatResponse(member_random_keys=[key])
-            insert_log(input_dict, resp.model_dump())
+            # insert_log(input_dict, resp.model_dump())
             return resp
 
         # 4) shopping agent
