@@ -1,6 +1,9 @@
 fastapi
 pydantic-ai
 pydantic
+langchain-qdrant
+langchain-openai
+qdrant-client
 openai
 psycopg2
 uvicorn[standard]
