@@ -101,10 +101,14 @@ rules_initial = """
    - Is the user asking for **a specific product base**?  
    - Or for **a property/attribute of that product**?  
    - Or for **seller/shop-related information about that product**?  
+   - Or for **comparing two or more bases** with respect to a specific feature/use-case?  
 2. Decide which output fields to fill:  
    - If intent is **find product base** → fill `base_random_keys` (max 1).  
    - If intent is **get product attribute** → fill `message`.  
    - If intent is **shop/seller info (e.g., lowest price, number of shops)** → fill `message`.  
+   - If intent is **comparison across multiple bases** →  
+       • Pick the single product base that best matches the user’s requirement → return its key in `base_random_keys` (max 1).  
+       • Provide reasoning/justification in `message`.  
    - Leave others (`member_random_keys` or `base_random_keys`) **null** if not required.  
 3. Break down into only the subtasks needed for that scenario. Do not do extra work.  
 
@@ -114,12 +118,13 @@ rules_initial = """
   either:  
     • write the full SQL query yourself and run it with `execute_sql`, or  
     • use `generate_sql_query` to create the SQL, then run it with `execute_sql`.  
-- Use `build_exact_query_and_execute` or `build_like_query_and_execute` only for simple lookups by name/id.
+- Use `build_exact_query_and_execute` or `build_like_query_and_execute` only for simple lookups by name/id.  
 
 ### Notes:
 - Always answer directly to the user’s intent.  
 - Keep the plan short, avoid extra steps.  
 - Never add member/shop details unless explicitly asked.  
+- When comparing multiple bases, always justify clearly **why** one is chosen over the others.  
 
 """
 
@@ -139,7 +144,7 @@ instructions_generated = """
     • use `generate_sql_query` to create the SQL, then run it with `execute_sql`.  
 - Use `build_exact_query_and_execute` or `build_like_query_and_execute` only for simple lookups by name/id.  
 
-## Important: Never give up too soon.  
+## Important: Never give up too soon when retreiving a random_key of a product.
 - Product names may not match user text exactly.  
 - In order to get the random_key of a product from the supposed name (a simple query), always try progressively:  
   1. First attempt: `build_exact_query_and_execute` if you think you have a clean match.  
