@@ -90,9 +90,8 @@ def retrieve_from_vector_db(query: str, top_k: int = TOP_K):
     values = []
     for _, doc in enumerate(results, start=1):
         meta_data = {}
-        name = get_persian_name_from_db(doc.metadata.get("random_key"))
         rk = doc.metadata.get("random_key")
-        meta_data['persian_name'] = name
+        meta_data['persian_name'] = doc.page_content
         meta_data['random_key'] = rk
         values.append(meta_data)
     return values

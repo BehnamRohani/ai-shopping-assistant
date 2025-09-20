@@ -41,6 +41,7 @@ embeddings = OpenAIEmbeddings(
     model=EMBED_MODEL,
     api_key=OPENAI_API_KEY,
     base_url=BASE_URL,
+    dimensions = 256,
 )
 
 # Check if path exists and is non-empty

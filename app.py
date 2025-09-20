@@ -99,12 +99,6 @@ async def chat(req: ChatRequest):
         input_dict = req.model_dump()
         print("[INPUT]", input_dict)
 
-        # if input_dict['chat_id'] == 'retrieve_embed':
-        #     message = input_dict['message']
-        #     values = retrieve_from_vector_db(message)
-        #     return ChatResponse(message=",".join([v['persian_name'] for v in values]), 
-        #                  base_random_keys = [v['random_key'] for v in values])
-
         # very small defensive check
         if not req.messages:
             resp = ChatResponse()
