@@ -16,7 +16,7 @@ DB_CONFIG = {
     "password": os.getenv("DB_PASSWORD"),
 }
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = os.getenv("API_KEY")
 BASE_URL = os.getenv("BASE_URL")
 MODEL = "text-embedding-3-small"
 
