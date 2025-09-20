@@ -29,6 +29,7 @@ from sql.sql_agent import generate_sql_query
 from sql.sql_utils import execute_sql, build_like_query_and_execute, build_exact_query_and_execute
 from prompt.prompts import *
 from utils import preprocess_persian
+from sql.similarity_search_db import similarity_search
 
 
 # load environment
@@ -96,8 +97,7 @@ shopping_agent = Agent(
     system_prompt=system_prompt.format(system_role = system_role,
                                         tools = tools_info, 
                                        rules = instructions_generated),
-    tools=[build_exact_query_and_execute,
-           build_like_query_and_execute, 
+    tools=[similarity_search,
            generate_sql_query,
            execute_sql,],
     output_type=ShoppingResponse,  # Pydantic handles validation/parsing automatically
