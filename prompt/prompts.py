@@ -67,28 +67,19 @@ Example: Features may be width (عرض), height (ارتفاع), size (انداز
 tools_info = """
 You have access to the following tools:
 
-1. build_exact_query_and_execute(table_name: str, column_name: str, variable_query: str, limit: int = 10, columns: list[str] | None = None) -> list[RealDictRow] | str:
-   Builds and executes a SQL query that searches for rows where a column exactly matches
-   the given value. You can specify which columns to return. Enforces a minimum limit of 1.
-   → Use when you are confident you have the full exact product name.  
-   ⚠️ If no match is found, do **not** stop — fallback to LIKE search.  
+1. similarity_search(query: str, top_k: int = 5) -> list[tuple[str, str, float]]:
+   Performs a semantic similarity search in the products database using pgvector embeddings.  
+   Returns a list of tuples: (random_key, persian_name, similarity_score).  
+   → Use this when retrieving product random_key(s) from user queries, even if the product name is slightly different.  
 
-2. build_like_query_and_execute(table_name: str, column_name: str, variable_query: str, limit: int = 10, columns: list[str] | None = None) -> list[RealDictRow] | str:
-   Builds and executes a SQL query that searches for rows where a column contains
-   a given substring (case-insensitive). You can specify which columns to return.
-   Enforces a minimum limit of 3.
-   → Use when the product name may differ slightly (extra words, spacing, spelling).  
-   ⚠️ Must return at least 3 rows, so always set limit >= 3.  
-   
-3. generate_sql_query(instruction: str) -> tuple[str, str]: 
+2. generate_sql_query(instruction: str) -> tuple[str, str]: 
    Generates a PostgreSQL query from natural language.
    → Use for complex requests (aggregations, computations).  
 
-4. execute_sql(query: str) -> list[RealDictRow]: 
+3. execute_sql(query: str) -> list[RealDictRow]: 
    Executes a PostgreSQL query and returns results.
    → Run SQL directly (your own query or one produced by `generate_sql_query`).  
 """
-
 
 rules_initial = """
 ### Rules:
@@ -118,15 +109,15 @@ rules_initial = """
   either:  
     • write the full SQL query yourself and run it with `execute_sql`, or  
     • use `generate_sql_query` to create the SQL, then run it with `execute_sql`.  
-- Use `build_exact_query_and_execute` or `build_like_query_and_execute` only for simple lookups by name/id.  
+- Use `similarity_search` to map user text → product random_key(s).  
 
 ### Notes:
 - Always answer directly to the user’s intent.  
 - Keep the plan short, avoid extra steps.  
 - Never add member/shop details unless explicitly asked.  
 - When comparing multiple bases, always justify clearly **why** one is chosen over the others.  
-
 """
+
 
 instructions_generated = """
 1. Always return the Pydantic response with these fields:
@@ -142,19 +133,20 @@ instructions_generated = """
   either:  
     • write the full SQL query yourself and run it with `execute_sql`, or  
     • use `generate_sql_query` to create the SQL, then run it with `execute_sql`.  
-- Use `build_exact_query_and_execute` or `build_like_query_and_execute` only for simple lookups by name/id.  
+- Use `similarity_search` to resolve product references from user text.  
 
-## Important: Never give up too soon when retreiving a random_key of a product.
-- Product names may not match user text exactly.  
-- In order to get the random_key of a product from the supposed name (a simple query), always try progressively:  
-  1. First attempt: `build_exact_query_and_execute` if you think you have a clean match.  
-  2. If no result: retry with `build_like_query_and_execute` using key parts of the product name.  
-  3. If still no result: consider synonyms, shortened forms, or partial brand/model extraction.  
-- Only after multiple reasonable attempts can you conclude a product truly does not exist.  
-
-Notes:  
-- Many failures happen because the product name is slightly different in the DB.  
-- Your job is to find the closest match, not to stop early.  
+## Important: Interpreting similarity_search results
+- Always use `similarity_search` with the given query to resolve product names.  
+- Product names may not match user text exactly, but similarity search handles this.  
+- If `similarity_search` returns **extremely irrelevant results** (clearly unrelated to the query),  
+  immediately assume the product does **not exist** in the database.  
+- If the top results are **somewhat relevant but differ in crucial details**,  
+  you may optionally retry with a larger `top_k` (e.g., 10 or 20) to widen the search space.  
+- Interpret results also by similarity score:  
+  • A high score (e.g., ≥ 0.8 cosine similarity) usually indicates a strong match.  
+  • A very low score (e.g., ≤ 0.4) means the result is almost certainly not relevant.  
+  • Scores in the middle require judgment — check the product name/content.  
+- Pick the best matching product only if it is a reasonable match — otherwise, return nothing.  
 """
 
 system_role_initial = """

@@ -108,7 +108,9 @@ async def chat(req: ChatRequest):
             results = similarity_search(content, top_k = 5)
             rks = [res[0] for res in results]
             names = [res[1] for res in results]
-            resp = ChatResponse(message = "\n".join(names), base_random_keys=rks)
+            similarities = [res[2] for res in results]
+            message_list = [(names[i], similarities[i]) for i in range(len(names))]
+            resp = ChatResponse(message = "\n".join(message_list), base_random_keys=rks)
             return resp
 
         # very small defensive check
