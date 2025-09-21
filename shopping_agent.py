@@ -172,12 +172,13 @@ async def run_shopping_agent(
         if use_initial_similarity_search:
             try:
                 candidates = similarity_search(preprocessed_instruction, top_k=5, probes=20)
-                # candidates is expected to be list[tuple[str, str, float]]
-                rows = []
-                for rk, name, score in candidates:
-                    rows.append(f"{rk} -> {name} -> similarity: {score:.3f}")
-                similarity_text = "\n".join(rows)
-                print("Similarity search results:\n", similarity_text)
+                if candidates[0][-1] > 0.7:
+                    # candidates is expected to be list[tuple[str, str, float]]
+                    rows = []
+                    for rk, name, score in candidates:
+                        rows.append(f"{rk} -> {name} -> similarity: {score:.4f}")
+                    similarity_text = "\n".join(rows)
+                    print("Similarity search results:\n", similarity_text)
             except Exception as e:
                 print(f"Similarity search failed: {e}")
 
