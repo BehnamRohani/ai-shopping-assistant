@@ -106,6 +106,7 @@ async def chat(req: ChatRequest):
         # Similarity Search DB
         if input_dict['chat_id'] == 'retrieve_similar':
             results = similarity_search(content, top_k = 5)
+            print(results)
             rks = [res[0] for res in results]
             names = [res[1] for res in results]
             similarities = [f"{res[2]:.4f}" for res in results]
