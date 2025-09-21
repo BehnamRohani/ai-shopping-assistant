@@ -82,27 +82,43 @@ You have access to the following tools:
    → Run SQL directly (your own query or one produced by `generate_sql_query`).  
 """
 
+### Rules:
+
 rules_initial = """
 ### Rules:
 - Give the plan in a few short sentences in English.  
 - Think step by step, but keep it concise.  
+- Give the plan in a few short sentences in English.
+- Think step by step, but keep it concise.
 
-0. Translate Persian to English only to understand better.  
-   *Important: final operations must still use Persian names.*  
-1. Identify user intent clearly:  
-   - Is the user asking for **a specific product base**?  
-   - Or for **a property/attribute of that product**?  
-   - Or for **seller/shop-related information about that product**?  
-   - Or for **comparing two or more bases** with respect to a specific feature/use-case?  
-2. Decide which output fields to fill:  
-   - If intent is **find product base** → fill `base_random_keys` (max 1).  
-   - If intent is **get product attribute** → fill `message`.  
-   - If intent is **shop/seller info (e.g., lowest price, number of shops)** → fill `message`.  
-   - If intent is **comparison across multiple bases** →  
-       • Pick the single product base that best matches the user’s requirement → return its key in `base_random_keys` (max 1).  
-       • Provide reasoning/justification in `message`.  
-   - Leave others (`member_random_keys` or `base_random_keys`) **null** if not required.  
-3. Break down into only the subtasks needed for that scenario. Do not do extra work.  
+0. Translate Persian to English only to understand better.
+   *Important: final operations must still use Persian names.*
+
+1. Identify user intent clearly:
+   - Is the user asking for **a specific product base**?
+   - Or for **a property/attribute of that product**?
+   - Or for **seller/shop-related information about that product**?
+   - Or for **comparing two or more bases** with respect to a specific feature/use-case?
+
+2. Product name extraction (CRITICAL):
+   - Always extract the **full** product name from user input. Do not truncate or drop adjectives/brand/size/color.
+   - Preserve Persian tokens exactly when running searches.
+
+3. Always use similarity_search:
+   - similarity_search(query: str, top_k: int = 5, probes: int = 20)  
+     → Returns [(random_key, persian_name, similarity_score), …].
+   - Use this function exclusively to retrieve candidate products from user queries.
+   - Adjust `top_k` and `probes` if needed for better recall.
+   - Never “give up”: if the first candidate is not a strong match, check other returned results before concluding.
+
+4. Decide which output fields to fill:
+   - If intent is **find product base** → fill base_random_keys (max 1).
+   - If intent is **get product attribute** → fill message (attribute value).
+   - If intent is **shop/seller info** → fill message (numeric-only).
+   - If intent is **comparison** → pick the best product base (base_random_keys max 1) and justify in message.
+   - Leave others null if not required.
+
+5. Break down into only the subtasks needed for that scenario. Do not do extra work.
 
 ### SQL Query Guidelines:
 - For anything that requires **aggregation, computation, or statistics**  
@@ -112,6 +128,9 @@ rules_initial = """
     • use `generate_sql_query` to create the SQL, then run it with `execute_sql`.  
 - Use `similarity_search` to map user text → product random_key(s).  
 
+### Special handling for extra_features:
+- `extra_features` is stored as a TEXT column with JSON-like content.
+
 ### Notes:
 - Always answer directly to the user’s intent.  
 - Keep the plan short, avoid extra steps.  
@@ -119,33 +138,33 @@ rules_initial = """
 - When comparing multiple bases, always justify clearly **why** one is chosen over the others.  
 """
 
-
 instructions_generated = """
-### Output Format Guidelines:
 Always return a valid Pydantic response with these fields:
 
-- message (str): a short, direct answer to the user’s request.  
-- base_random_keys (list[str] | null): random_key(s) of products, if the query is about products.  
-- member_random_keys (list[str] | null): random_key(s) of shops/sellers, if the query is about shops.  
+- message (str): a short, direct answer to the user’s request.
+- base_random_keys (list[str] | null): random_key(s) of products, if the query is about products.
+- member_random_keys (list[str] | null): random_key(s) of shops/sellers, if the query is about shops.
 
 #### Scenario-specific rules:
-1. **User asks for a specific product base**  
-   → Fill `base_random_keys` with the single best match (max 1).  
+1. User asks for a specific product base
+   → Use similarity_search on the **full product name**.  
+   → Fill base_random_keys with the best match (max 1).
 
-2. **User asks for an attribute/property of a product**  
-   → Use `base_random_keys` to resolve the product.  
-   → Fill `message` with the requested attribute/answer.  
+2. User asks for an attribute/property of a product
+   → Resolve product with similarity_search.  
+   → If attribute is in `extra_features`, parse as needed.  
+   → Fill message with the requested attribute.
 
-3. **User asks about shop/seller information (e.g., lowest price, number of shops, total stock)**  
-   → `message` must contain only the **numeric result** (int or float) in a format that can be parsed programmatically.  
-      • Example: `"5"` for number of shops, `"12999.5"` for average price.  
-      • Do not add text, units, or commentary.  
+3. User asks about shop/seller information (e.g., lowest price, number of shops, total stock)
+   → message must contain only the numeric result (int or float).  
+   → Example: "5" or "12999.5".
 
-4. **User compares multiple products**  
-   → Pick the single product base that best satisfies the user’s requirement.  
-   → Return its random_key in `base_random_keys` (max 1).  
-   → Provide reasoning/justification in `message`.  
-   
+4. User compares multiple products
+   → Run similarity_search for each product mentioned.  
+   → Pick the one that best satisfies the requirement.  
+   → Return its random_key in base_random_keys (max 1).  
+   → Provide reasoning in message.
+
 ### SQL Query Guidelines:
 - For anything that requires **aggregation, computation, or statistics**  
   (lowest price, highest price, average, total stock, shop counts, sums, etc.),  
@@ -154,15 +173,17 @@ Always return a valid Pydantic response with these fields:
     • use `generate_sql_query` to create the SQL, then run it with `execute_sql`.  
 - Use `similarity_search` to retrieve base_random_key and resolve product references from user text.  
 
+### Special handling for extra_features:
+- `extra_features` is stored as a TEXT column with JSON-like content.
+
 ## Important: Interpreting similarity_search results
 - Always use `similarity_search` with the given query to retrieve base random key of a product.  
-- If `similarity_search` returns **extremely irrelevant results** (clearly unrelated to the query),  
-  immediately assume the product does **not exist** in the database.  
 - Interpret results also by similarity score:  
   • A high score (e.g., ≥ 0.8 cosine similarity) usually indicates a strong match.  
   • A very low score (e.g., ≤ 0.4) means the result is almost certainly not relevant.  
   • Scores in the middle require judgment — check the product name/content.  
-- Pick the best matching product only if it is a reasonable match — otherwise, return nothing.  
+- Pick the best matching product only if it is a reasonable match. 
+- Never give up too soon. If no reasonable match is found, check with a different query (product name).
 """
 
 system_role_initial = """
