@@ -240,6 +240,9 @@ async def run_shopping_agent(
             )
             normalized_message = await parser_agent.run(parser_input)
             output_dict['message'] = normalized_message.output
+        
+        # Handling
+        output_dict['base_random_keys'] = None if not result.output.finished else output_dict['base_random_keys']
 
         return result, output_dict
 

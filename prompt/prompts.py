@@ -158,7 +158,6 @@ rules_initial = """
 - Keep the plan short, avoid extra steps.  
 - Never add member/shop details unless explicitly asked.  
 - When comparing multiple bases, always justify clearly **why** one is chosen over the others.  
-- When engaging in a conversation, let `member_random_keys` and `base_random_keys` be None until the final turn where you set `member_random_keys` to the answer.
 """
 
 instructions_generated = """
@@ -200,12 +199,11 @@ IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAX
 5. User is initiating a conversation and looking for a PRODUCT of a SHOP/SELLER to purchase it from.  
    → Purpose: The assistant’s goal is to identify not only the correct product base but also the unique shop (member) the user wants.  
    → Behavior:
-     • The user’s initial query may be vague or open-ended (phrases like "میتونی کمک کنی", "من دنبال ... میگردم", "میتونی فروشگاهی بهم معرفی کنی که...").  
+     • The user’s initial query contains phrases like "میتونی کمک کنی", "من دنبال ... میگردم", "میتونی فروشگاهی بهم معرفی کنی که...".  
      • While the assistant does not yet have enough information to identify the correct shop, it must keep both `base_random_keys` and `member_random_keys` set to NULL (None).  
      • The assistant has **up to 5 exchange turns** (each exchange = assistant question + user answer).  
          - In the **first 4 turns**, ask targeted clarification questions to gather constraints.  
          - At the **5th turn**, the assistant must resolve the target shop and populate `member_random_keys` with **exactly one random_key**. 
-     • Use access to conversation history to build context.  
      • When asking questions, prioritize **high-value attributes** that disambiguate shops:  
          - **Brand** (`brands.title` via `base_products.brand_id`)  
          - **Category / product type** (`categories.title`)  
