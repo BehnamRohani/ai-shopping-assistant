@@ -104,7 +104,7 @@ async def chat(req: ChatRequest):
 
         # 4) shopping agent
         _, output_dict = await run_shopping_agent(input_dict=input_dict, 
-                                                  use_initial_plan=False,
+                                                  use_initial_plan=True,
                                                   use_parser_output=True,
                                                   use_initial_similarity_search=True)
         insert_chat(input_dict, output_dict)

@@ -2,17 +2,38 @@
 # System prompt (schema + step-by-step)
 # -------------------------
 
-# input_classification_sys_prompt = """
-# You are an AI assistant that receives user requests in JSON format and must classify and respond according to five scenarios. Each scenario maps to one of the following classes:
+input_classification_sys_prompt = """
+You are an AI assistant that receives user requests in JSON format and must classify and respond according to five scenarios. Each scenario maps to one of the following classes:
 
-# - PRODUCT_SEARCH → The user is looking for a specific product that can be mapped directly to one base.
-# - PRODUCT_FEATURE → The user is asking for a specific feature of a product that can be mapped to one base.
-# - NUMERIC_VALUE → The user is asking for a numeric value (such as price or lowest price) for a product that can be mapped to one base.
-# - PRODUCTS_COMPARE → The user is comparing two or more products (bases) for a specific use case.
-# - CONVERSATION → The initial query cannot be mapped directly to a product, so the assistant must clarify by asking questions until the product is identified.
+- PRODUCT_SEARCH → The user is looking for a specific product that can be mapped directly to one base.
+- PRODUCT_FEATURE → The user is asking for a specific feature of a product that can be mapped to one base.
+- NUMERIC_VALUE → The user is asking for a numeric value (such as price or lowest price) for a product that can be mapped to one base.
+- PRODUCTS_COMPARE → The user is comparing two or more products (bases) for a specific use case.
+- CONVERSATION → The initial query cannot be mapped directly to a product, so the assistant must clarify by asking questions until the product is identified.
 
-# ### Output Note: Return only one of these class names and don't say anything else.
-# """
+### Output Note: Return only one of these class names and don't say anything else.
+
+1) PRODUCT_SEARCH
+- Input: Please get me the four-drawer dresser (code D14).
+- Class: PRODUCT_SEARCH
+
+2) PRODUCT_FEATURE
+- Input: What is the width of the golden yellow fabric code 130?
+- Class: PRODUCT_FEATURE
+
+3) NUMERIC_VALUE
+- Input: What is the lowest price for the Black Gold Bonsai plant code 0108?
+- Class: NUMERIC_VALUE
+
+4) CONVERSATION
+The user is looking for a product, but the initial query is ambiguous. The assistant must clarify through up to 5 back-and-forth steps and finally output the product in member_random_keys.
+- Input: I’m looking for a desk suitable for writing and daily tasks. Can you help me find a good seller?
+- Class: CONVERSATION
+
+5) PRODUCTS_COMPARE
+- Input: Which of these mugs (Watermelon Cartoon Mug code 1375 vs Ceramic Latte Mug code 741) is more suitable for children?
+- Class: PRODUCTS_COMPARE
+"""
 
 schema_prompt = """
 We have data from torob.com structured in multiple tables. Below is a detailed description of each table and its columns:
@@ -113,7 +134,6 @@ rules_initial = """
    - Or for **seller/shop-related information about that product**?
    - Or for **comparing two or more bases** with respect to a specific feature/use-case?
    - Or for **initating a conversation to find a suitable product and seller** (interactive narrowing until a member_random_key can be determined)?
-
 
 2. Product name extraction (CRITICAL):
    - Always extract the **full** product name from user input. Do not truncate or drop adjectives/brand/size/color.
