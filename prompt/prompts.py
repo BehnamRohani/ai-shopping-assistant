@@ -153,6 +153,9 @@ Always return a valid Pydantic response with these fields:
 - message (str): a short, direct answer to the user’s request.
 - base_random_keys (list[str] | null): random_key(s) of products, if the query is about products.
 - member_random_keys (list[str] | null): random_key(s) of shops/sellers, if the query is about shops.
+- finished (bool): Indicates whether the assistant’s answer is definitive and complete.
+    - True means the model is confident and the output is final (e.g., a member_random_key has been identified).
+    - False means the assistant may still need follow-up interactions to finalize the answer.
 
 #### Scenario-specific rules:
 1. User asks for a specific product base

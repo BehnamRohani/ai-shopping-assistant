@@ -109,8 +109,9 @@ async def chat(req: ChatRequest):
                                                   use_initial_similarity_search=True)
         insert_chat(input_dict, output_dict)
         print("[OUTPUT]", output_dict)
-
         insert_log(input_dict, output_dict)
+        # Remove `finished` from the output dict before returning
+        output_dict.pop("finished", None)
         return output_dict
 
     except Exception as e:

@@ -3,7 +3,7 @@ from psycopg2.extras import RealDictCursor
 import os, re
 import random
 import string
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 from dotenv import load_dotenv
 
@@ -55,26 +55,28 @@ def generate_base_id(length: int = 12) -> str:
     """Generate a random 12-character base_id."""
     return "".join(random.choices(string.ascii_letters + string.digits, k=length))
 
-def get_base_id_and_index(chat_id: str) -> tuple[str, int]:
+def get_base_id_and_index(chat_id: str, time_limit_hours: int = 1) -> tuple[str, int]:
     """
     Determine the base_id and chat_index for a given chat_id.
     
     Logic:
-    - Fetch the latest row for this chat_id ordered by timestamp descending.
+    - Fetch the latest row for this chat_id within the last `time_limit_hours` hours.
     - If no row exists or latest row is finished → generate new base_id, set chat_index=1.
     - Else → reuse base_id and increment chat_index by 1.
     """
+    cutoff_time = datetime.utcnow() - timedelta(hours=time_limit_hours)
+
     conn = get_db_conn()
     cur = conn.cursor()
 
-    # Fetch the most recent message for this chat_id
+    # Fetch the most recent message for this chat_id within the time limit
     cur.execute("""
         SELECT base_id, chat_index, finished
         FROM chats
-        WHERE chat_id = %s
+        WHERE chat_id = %s AND timestamp >= %s
         ORDER BY timestamp DESC
         LIMIT 1
-    """, (chat_id,))
+    """, (chat_id, cutoff_time))
     row = cur.fetchone()
 
     if row is None or row[2]:  # No previous rows OR finished=True
@@ -89,7 +91,6 @@ def get_base_id_and_index(chat_id: str) -> tuple[str, int]:
     conn.close()
 
     return base_id, chat_index
-
 
 # ------ DB Insert Helper ------
 def insert_chat(input_dict: dict, output_dict: dict):
@@ -106,7 +107,7 @@ def insert_chat(input_dict: dict, output_dict: dict):
     user_image_url = all_images[0] if all_images else None
     user_text = all_texts[0] if all_texts else None
 
-    finished = bool(output_dict.get("member_random_keys"))
+    finished = bool(output_dict.get("member_random_keys")) or output_dict.get("finished", False)
 
     base_id, chat_index = get_base_id_and_index(chat_id=chat_id)
 

@@ -76,10 +76,13 @@ class ShoppingResponse(BaseModel):
     - message: Explanation or natural-language answer (or null).
     - base_random_keys: list of base product random_key values (or null).
     - member_random_keys: list of member random_key values (or null).
+    - finished: Boolean indicating if the answer is definite / final.
     """
     message: Optional[str] = None
     base_random_keys: Optional[List[str]] = None
     member_random_keys: Optional[List[str]] = None
+    finished: bool = False
+
 
 shopping_client = OpenAIChatModel(
     SHOPPING_MODEL,
