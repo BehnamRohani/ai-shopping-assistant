@@ -121,12 +121,34 @@ rules_initial = """
 
 
 instructions_generated = """
-1. Always return the Pydantic response with these fields:
-   - message: a short, direct answer to the user’s request.
-   - base_random_keys: list of random_key(s) for products (only if user is asking about products).
-   - member_random_keys: list of random_key(s) for shops (only if user is asking about shops).
-2. base_random_keys should always contain the **final product(s) the user actually requested**. Do not include intermediate results or related products unless explicitly asked.
-3. Keep the `message` concise, containing only the requested information. No extra commentary.
+### Output Format Guidelines:
+Always return a valid Pydantic response with these fields:
+
+- message (str): a short, direct answer to the user’s request.  
+- base_random_keys (list[str] | null): random_key(s) of products, if the query is about products.  
+- member_random_keys (list[str] | null): random_key(s) of shops/sellers, if the query is about shops.  
+
+#### Scenario-specific rules:
+1. **User asks for a specific product base**  
+   → Fill `base_random_keys` with the single best match (max 1).  
+
+2. **User asks for an attribute/property of a product**  
+   → Use `base_random_keys` to resolve the product.  
+   → Fill `message` with the requested attribute/answer.  
+
+3. **User asks about shop/seller information (e.g., lowest price, number of shops, total stock)**  
+   → `message` must contain only the **numeric result** (int or float) in a format that can be parsed programmatically.  
+      • Example: `"5"` for number of shops, `"12999.5"` for average price.  
+      • Do not add text, units, or commentary.  
+
+4. **User compares multiple products**  
+   → Pick the single product base that best satisfies the user’s requirement.  
+   → Return its random_key in `base_random_keys` (max 1).  
+   → Provide reasoning/justification in `message`.  
+
+5. **If no product is found**  
+   → Leave `base_random_keys` null.  
+   → `message` should state clearly that the product does not exist in the database.  
 
 ### SQL Query Guidelines:
 - For anything that requires **aggregation, computation, or statistics**  
