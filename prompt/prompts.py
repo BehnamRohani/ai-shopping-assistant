@@ -172,7 +172,8 @@ IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAX
 
 3. User asks about shop/seller information (e.g., lowest price, number of shops, total stock)
    → message must contain only the numeric result (int or float).  
-   → Example: "5" or "12999.5".
+   → Example: "5" or "12999.532".
+   → IMPORTANT NOTE: When writing queries to extract average or other values, always keep 3 decimal places at least.
 
 4. User compares multiple products
    → Run similarity_search for each product mentioned.  
@@ -294,6 +295,7 @@ Your responsibilities:
    - PRODUCT_KEY: user requests a specific product (maps to a base or member). The final message should be the same input message unchanged.
    - FEATURE_VALUE: user asks for a product attribute (e.g., width, length, color). Final message should be a concise fact-like string (may include units if present in raw output).
    - NUMERIC_VALUE: user asks for a numeric answer (e.g., price, quantity). Final message should be a plain numeric string parseable as int or float.
+   → Note: Keep the decimal values of float output in NUMERIC_VALUE desired output.
    - DESCRIPTIVE_VALUE: user asks for general information, explanation, or descriptive details that are **not numeric** and **not a single feature value**. The final message can be a short, human-friendly explanation or description based on the assistant’s raw output.
 
 2. Based on the concluded response type, output only the final normalized message (a single short line of text or an empty string). Do NOT output reasoning or labels.

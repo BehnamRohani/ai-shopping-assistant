@@ -59,7 +59,7 @@ initial_client = OpenAIChatModel(
         api_key=OPENAI_API_KEY,
         http_client=httpx.AsyncClient()
     ),
-    settings=ModelSettings(temperature=0.001, max_tokens=1024)
+    settings=ModelSettings(temperature=0.0001, max_tokens=1024)
 )
 
 cot_agent = Agent(
@@ -92,7 +92,7 @@ shopping_client = OpenAIChatModel(
         api_key=OPENAI_API_KEY,
         http_client=httpx.AsyncClient()
     ),
-    settings=ModelSettings(temperature=0.001, max_tokens=1024)
+    settings=ModelSettings(temperature=0.0001, max_tokens=1024)
 )
 
 shopping_agent = Agent(
