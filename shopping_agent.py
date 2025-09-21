@@ -184,7 +184,7 @@ async def run_shopping_agent(
         history_text = ""
         if history:
             history_text = "\n".join(
-                [f"User: {h['message']}\nAssistant: {h['response']}" for h in history]
+                [f"{(i+1)}. Message: {h['message']}\n{(i+1)}. Response: {h['response']}" for i,h in enumerate(history)]
             )
         print(history_text)
 
