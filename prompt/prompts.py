@@ -67,7 +67,7 @@ Example: Features may be width (عرض), height (ارتفاع), size (انداز
 tools_info = """
 You have access to the following tools:
 
-1. similarity_search(query: str, top_k: int = 5, probes: int = 10) -> list[tuple[str, str, float]]:
+1. similarity_search(query: str, top_k: int = 5, probes: int = 20) -> list[tuple[str, str, float]]:
    Performs a semantic similarity search in the products database using pgvector embeddings.  
    Returns a list of tuples: (random_key, persian_name, similarity_score).  
    → Use this when retrieving product random_key(s) from user queries, even if the product name is slightly different.  
@@ -145,11 +145,7 @@ Always return a valid Pydantic response with these fields:
    → Pick the single product base that best satisfies the user’s requirement.  
    → Return its random_key in `base_random_keys` (max 1).  
    → Provide reasoning/justification in `message`.  
-
-5. **If no product is found**  
-   → Leave `base_random_keys` null.  
-   → `message` should state clearly that the product does not exist in the database.  
-
+   
 ### SQL Query Guidelines:
 - For anything that requires **aggregation, computation, or statistics**  
   (lowest price, highest price, average, total stock, shop counts, sums, etc.),  

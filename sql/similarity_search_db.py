@@ -30,7 +30,7 @@ def get_embedding(text):
         input=text
     )
     return response.data[0].embedding
-def similarity_search(query, top_k: int = 5, probes: int = 10):
+def similarity_search(query, top_k: int = 5, probes: int = 20):
     """
     Perform a similarity search in the product_embed table using pgvector IVFFlat index.
 
