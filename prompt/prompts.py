@@ -187,7 +187,7 @@ Always return a valid Pydantic response with these fields:
 - base_random_keys (list[str] | null): random_key(s) of products
 - member_random_keys (list[str] | null): random_key(s) of shops/sellers.
 - finished (bool): Indicates whether the assistant’s answer is definitive and complete.
-    - True means the model is confident and the output is final (e.g., a member_random_key has been identified).
+    - True means the model is that the output is final.
     - False means the assistant may still need follow-up interactions to finalize the answer.
 IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAXIMUM 1** ELEMENT.
 

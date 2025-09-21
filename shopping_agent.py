@@ -194,7 +194,7 @@ async def run_shopping_agent(
         # Step 2: optionally generate plan
         plan_output = None
         plan_text = ""
-        if use_initial_plan and (chat_index==5):
+        if use_initial_plan and (chat_index == 1):
             plan_output = await cot_agent.run(preprocessed_instruction)
             plan_text = plan_output.output or ""
             print(plan_text)
@@ -243,6 +243,7 @@ async def run_shopping_agent(
         
         # Handling
         output_dict['base_random_keys'] = None if not result.output.finished else output_dict['base_random_keys']
+        output_dict['member_random_keys'] = None if not result.output.finished else output_dict['member_random_keys']
 
         return result, output_dict
 
