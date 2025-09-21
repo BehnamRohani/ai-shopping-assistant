@@ -120,7 +120,7 @@ rules_initial = """
    - If intent is **shop/seller info** → fill message (numeric-only).
    - If intent is **comparison** → pick the best product base (base_random_keys max 1) and justify in message.
    - If intent is **shop discovery for a specific product** → planning process:
-        • Trying figuring out candidate product bases using similarity_search.  
+        • Try figuring out candidate product bases using similarity_search.  
         • Then ask targeted, high-value questions (brand, features, price range, delivery city, warranty, seller reputation, availability, etc.) to narrow toward the correct shop.  
         • While clarifying, keep both base_random_keys and member_random_keys NULL.  
         • Once confident, resolve the exact shop (member_random_key) linked to that base product.  
@@ -156,6 +156,7 @@ Always return a valid Pydantic response with these fields:
 - finished (bool): Indicates whether the assistant’s answer is definitive and complete.
     - True means the model is confident and the output is final (e.g., a member_random_key has been identified).
     - False means the assistant may still need follow-up interactions to finalize the answer.
+IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have AT **MAXIMUM 1** ELEMENT.
 
 #### Scenario-specific rules:
 1. User asks for a specific product base
@@ -176,8 +177,9 @@ Always return a valid Pydantic response with these fields:
 4. User compares multiple products
    → Run similarity_search for each product mentioned.  
    → Pick the one that best satisfies the requirement.  
-   → Return its random_key in base_random_keys (max 1).  
+   → IMPORTANT: Return its random_key in base_random_keys **(MAX 1)**.  
    → Provide reasoning in message.
+
 5. User is looking for a SHOP to purchase a product but the initial query is too vague to map to a single shop
    → Purpose: the user seeks to purchase from a **shop/seller**, but the initial query cannot be directly mapped to one shop. The assistant must perform an interactive clarification dialogue with the user to find the correct shop.
    → Behavior:
