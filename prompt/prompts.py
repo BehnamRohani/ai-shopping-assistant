@@ -123,7 +123,7 @@ rules_initial = """
       • Run an **interactive narrowing process** by asking targeted, high-value clarification questions (brand, features, price range, delivery city, warranty, seller reputation, availability, etc.).  
       • While clarifying, both `base_random_keys` and `member_random_keys` must remain NULL.  
       • Use at most 4 questions to narrow down.  
-      • On the **5th attempt**, resolve and return the final shop by filling `member_random_keys` with exactly one random_key.  
+      • IMPORTANT: On the **5th attempt**, resolve and return the final shop **by filling `member_random_keys`** with exactly **one random_key**.  
       • At that point, also set `finished = True`.  
    - Leave others null if not required.
 
@@ -181,7 +181,7 @@ IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAX
    → IMPORTANT: Return its random_key in base_random_keys **(MAX 1)**.  
    → Provide reasoning in message.
 
-5. User is looking for a PRODUCT or a SHOP/SELLER to purchase it from.  
+5. User is looking for a PRODUCT of a SHOP/SELLER to purchase it from.  
    → Purpose: The assistant’s goal is to identify not only the correct product base but also the unique shop (member) the user wants.  
    → Behavior:
      • The user’s initial query may be vague or open-ended (phrases like "میتونی کمک کنی", "من دنبال ... میگردم", "میتونی فروشگاهی بهم معرفی کنی که...").  
@@ -200,7 +200,7 @@ IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAX
          - **Stock status / variations** (`base_products.extra_features`, e.g. رنگ, اندازه, جنس)  
          - **Popularity / engagement** (from `searches`, `base_views`, `final_clicks`)  
      • SQL queries must be generated and executed **ONLY at 5th turn**. Keep asking questions in the first 4 turns.
-     • Once the assistant has enough information (always by the 5th turn at the latest), resolve the exact shop and return one `member_random_key`.  
+     • Once the assistant has enough information (always by the 5th turn at the latest), **resolve the exact shop and return one `member_random_key`**.  
      • At that point, set `finished = True` and stop the process.  
 
 ### SQL Query Guidelines:
