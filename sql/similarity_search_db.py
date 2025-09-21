@@ -54,7 +54,7 @@ def similarity_search(query, top_k: int = 5, probes: int = 10):
             cur.execute("""
                 SELECT random_key,
                        persian_name,
-                       (1 - (embedding <=> %s))::numeric(10,4) AS similarity
+                       1 - (embedding <=> %s) AS similarity
                 FROM product_embed
                 ORDER BY embedding <=> %s
                 LIMIT %s
