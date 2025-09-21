@@ -124,24 +124,33 @@ usage_limits = UsageLimits(request_limit=30, tool_calls_limit=30, output_tokens_
 from typing import Tuple, Optional
 
 async def run_shopping_agent(
-    instruction: str,
+    input_dict: dict,
     use_initial_plan: bool = True,
     use_parser_output: bool = True,
     use_initial_similarity_search: bool = True,
 ) -> Tuple[Optional[ShoppingResponse], dict]:
     """
-    Execute the Torob Shopping Assistant pipeline for a given user instruction.
+    Execute the Torob Shopping Assistant pipeline for a given user instruction/chat input.
 
     Args:
-        instruction (str): User input.
+        input_dict (dict): User input as a dictionary, e.g.,
+            {
+              "chat_id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+              "messages": [
+                {
+                  "type": "text",
+                  "content": "سلام، یک گوشی آیفون ۱۶ پرومکس میخوام"
+                }
+              ]
+            }
         use_initial_plan (bool): If True, generate a high-level plan via CoT agent.
         use_parser_output (bool): If True, normalize final message using parser agent.
         use_initial_similarity_search (bool): If True, run similarity search first and include results in prompt.
 
     Steps:
-    1. Preprocess the user instruction (Persian normalization).
+    1. Preprocess the user input (Persian normalization).
     2. Optionally generate a high-level plan using the CoT agent.
-    3. Optionally run similarity search and append candidates.
+    3. Optionally run similarity search and append candidate products.
     4. Run the shopping agent with combined input, plan, and candidates.
     5. Optionally normalize the output message via the parser agent.
 
@@ -156,6 +165,12 @@ async def run_shopping_agent(
         - Dictionary with error message in 'message' and None for key lists.
     """
     try:
+        # Step 0: Get text Message
+        all_texts = [m["content"] for m in input_dict["messages"] if m["type"] == "text"]
+        all_images = [m["content"] for m in input_dict["messages"] if m["type"] == "image"]
+        instruction = all_texts[0] if all_texts else None
+        user_image_url = all_images[0] if all_images else None
+
         # Step 1: preprocess input
         preprocessed_instruction = preprocess_persian(instruction)
 

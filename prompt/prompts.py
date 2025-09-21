@@ -99,6 +99,8 @@ rules_initial = """
    - Or for **a property/attribute of that product**?
    - Or for **seller/shop-related information about that product**?
    - Or for **comparing two or more bases** with respect to a specific feature/use-case?
+   - Or for **finding the right shop** (interactive narrowing until a member_random_key can be determined)?
+
 
 2. Product name extraction (CRITICAL):
    - Always extract the **full** product name from user input. Do not truncate or drop adjectives/brand/size/color.
@@ -117,6 +119,12 @@ rules_initial = """
    - If intent is **get product attribute** → fill message (attribute value).
    - If intent is **shop/seller info** → fill message (numeric-only).
    - If intent is **comparison** → pick the best product base (base_random_keys max 1) and justify in message.
+   - If intent is **shop discovery for a specific product** → planning process:
+        • Trying figuring out candidate product bases using similarity_search.  
+        • Then ask targeted, high-value questions (brand, features, price range, delivery city, warranty, seller reputation, availability, etc.) to narrow toward the correct shop.  
+        • While clarifying, keep both base_random_keys and member_random_keys NULL.  
+        • Once confident, resolve the exact shop (member_random_key) linked to that base product.  
+        • Final output: member_random_keys must contain exactly one shop product (max 1).  
    - Leave others null if not required.
 
 5. Break down into only the subtasks needed for that scenario. Do not do extra work.
@@ -167,6 +175,27 @@ Always return a valid Pydantic response with these fields:
    → Pick the one that best satisfies the requirement.  
    → Return its random_key in base_random_keys (max 1).  
    → Provide reasoning in message.
+5. User is looking for a SHOP to purchase a product but the initial query is too vague to map to a single shop
+   → Purpose: the user seeks to purchase from a **shop/seller**, but the initial query cannot be directly mapped to one shop. The assistant must perform an interactive clarification dialogue with the user to find the correct shop.
+   → Behavior:
+     • While the assistant does not yet have enough information to identify the correct shop, it must keep both `base_random_keys` and `member_random_keys` set to NULL in its response.  
+     • In this state, the assistant should ask follow-up questions to narrow the user's needs.  
+     • The assistant has **up to 5 exchange turns** (question → user answer counts as one exchange) to clarify and reach the target shop.  
+          • Ask targeted, high-value questions that help disambiguate shops based on available data in the schema, such as:  
+       - **Brand** (from `brands.title` via `base_products.brand_id`).  
+       - **Category** or product type (from `categories.title`).  
+       - **Price range** (from `members.price`).  
+       - **City / delivery location** (from `shops.city_id` → `cities.name`).  
+       - **Warranty availability** (from `shops.has_warranty`).  
+       - **Shop reputation/score** (from `shops.score`).  
+       - **Stock status or variations** (from `base_products.extra_features`, e.g., رنگ, اندازه, جنس).  
+       - **Popularity / engagement** (inferred from `searches`, `base_views`, `final_clicks`).  
+     • Create sql queries and exceute them to retrieve any information you need.
+     • The assistant should prioritize these factors when asking clarification questions, choosing the ones most likely to differentiate shops for the given query. 
+     • User already knows the hidden target shop but won’t reveal it in the initial query — design questions that elicit the user's hidden constraints.  
+     • Once the assistant has enough information, resolve the target **shop** and populate **member_random_keys** with exactly **one** random_key (e.g., ["xpjtgd"]).  
+     • When `member_random_keys` is filled, the process ends immediately (the judge will accept and stop).  
+
 
 ### SQL Query Guidelines:
 - For anything that requires **aggregation, computation, or statistics**  

@@ -2,10 +2,11 @@
 import os
 import re
 import json
+import random
+import string
 import psycopg2
 import psycopg2.extras
 from typing import List, Optional, Literal
-from datetime import datetime
 
 from fastapi import FastAPI, HTTPException
 from fastapi import Request
@@ -13,6 +14,7 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 from shopping_agent import run_shopping_agent
 from sql.similarity_search_db import similarity_search
+from sql.sql_utils import init_logs_table, insert_log, insert_chat
 
 # Load environment variables
 load_dotenv()
@@ -20,47 +22,6 @@ load_dotenv()
 OPENAI_API_KEY = os.environ['API_KEY']
 BASE_URL = os.environ['BASE_URL']
 MODEL_NAME = "gpt-4.1-mini"
-
-DB_CONFIG = {
-    "host": os.getenv("DB_HOST"),
-    "port": os.getenv("DB_PORT"),
-    "dbname": os.getenv("DB_NAME"),
-    "user": os.getenv("DB_USER"),
-    "password": os.getenv("DB_PASSWORD"),
-}
-
-# ------ Database Helpers ------
-def get_db_conn():
-    return psycopg2.connect(**DB_CONFIG)
-
-def init_logs_table():
-    conn = get_db_conn()
-    cur = conn.cursor()
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS logs (
-            id SERIAL PRIMARY KEY,
-            time TIMESTAMP NOT NULL,
-            input JSONB,
-            output JSONB
-        )
-    """)
-    conn.commit()
-    cur.close()
-    conn.close()
-
-def insert_log(input_data: dict, output_data: dict):
-    try:
-        conn = get_db_conn()
-        cur = conn.cursor()
-        cur.execute(
-            "INSERT INTO logs (time, input, output) VALUES (%s, %s, %s)",
-            (datetime.utcnow(), json.dumps(input_data), json.dumps(output_data))
-        )
-        conn.commit()
-        cur.close()
-        conn.close()
-    except Exception as e:
-        print(f"[ERROR] Failed to insert log: {e}")
 
 # ------ Lifespan Context ------
 from contextlib import asynccontextmanager
@@ -142,10 +103,11 @@ async def chat(req: ChatRequest):
             return resp
 
         # 4) shopping agent
-        _, output_dict = await run_shopping_agent(instruction=content, 
+        _, output_dict = await run_shopping_agent(input_dict=input_dict, 
                                                   use_initial_plan=True,
                                                   use_parser_output=True,
                                                   use_initial_similarity_search=True)
+        insert_chat(input_dict, output_dict)
         print("[OUTPUT]", output_dict)
 
         insert_log(input_dict, output_dict)
