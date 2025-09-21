@@ -28,7 +28,7 @@ from pydantic_ai.providers.openai import OpenAIProvider
 from sql.sql_agent import generate_sql_query
 from sql.sql_utils import execute_sql, build_like_query_and_execute, build_exact_query_and_execute
 from prompt.prompts import *
-from utils import preprocess_persian
+from utils.utils import preprocess_persian
 from sql.similarity_search_db import similarity_search
 from sql.sql_utils import get_chat_history, get_base_id_and_index
 
@@ -177,7 +177,7 @@ async def run_shopping_agent(
 
         # Step 0.5: fetch chat history
         chat_id = input_dict["chat_id"]
-        base_id, _ = get_base_id_and_index(chat_id)   # your existing function
+        base_id, chat_index = get_base_id_and_index(chat_id)   # your existing function
         history = get_chat_history(base_id)
 
         # Convert to readable string for the LLM
@@ -194,7 +194,7 @@ async def run_shopping_agent(
         # Step 2: optionally generate plan
         plan_output = None
         plan_text = ""
-        if use_initial_plan:
+        if use_initial_plan and (chat_index==5):
             plan_output = await cot_agent.run(preprocessed_instruction)
             plan_text = plan_output.output or ""
             print(plan_text)
