@@ -30,6 +30,7 @@ from sql.sql_utils import execute_sql, build_like_query_and_execute, build_exact
 from prompt.prompts import *
 from utils import preprocess_persian
 from sql.similarity_search_db import similarity_search
+from sql.sql_utils import get_chat_history, get_base_id_and_index
 
 
 # load environment
@@ -174,6 +175,19 @@ async def run_shopping_agent(
         instruction = all_texts[0] if all_texts else None
         user_image_url = all_images[0] if all_images else None
 
+        # Step 0.5: fetch chat history
+        chat_id = input_dict["chat_id"]
+        base_id, _ = get_base_id_and_index(chat_id)   # your existing function
+        history = get_chat_history(base_id)
+
+        # Convert to readable string for the LLM
+        history_text = ""
+        if history:
+            history_text = "\n".join(
+                [f"User: {h['message']}\nAssistant: {h['response']}" for h in history]
+            )
+        print(history_text)
+
         # Step 1: preprocess input
         preprocessed_instruction = preprocess_persian(instruction)
 
@@ -201,7 +215,10 @@ async def run_shopping_agent(
                 print(f"Similarity search failed: {e}")
 
         # Step 4: build prompt for shopping agent
-        prompt = "Input: " + preprocessed_instruction
+        prompt = ""
+        if history_text:
+            prompt += "Conversation history:\n" + history_text + "\n\n"
+        prompt += "Input: " + preprocessed_instruction
         if plan_text:
             prompt += "\n\nPlan:\n" + plan_text
         if similarity_text:

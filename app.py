@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 from shopping_agent import run_shopping_agent
 from sql.similarity_search_db import similarity_search
-from sql.sql_utils import init_logs_table, insert_log, insert_chat
+from sql.sql_utils import init_logs_table, insert_log, insert_chat, get_chat_history
 
 # Load environment variables
 load_dotenv()

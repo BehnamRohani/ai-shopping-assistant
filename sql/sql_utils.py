@@ -51,7 +51,7 @@ def insert_log(input_data: dict, output_data: dict):
     except Exception as e:
         print(f"[ERROR] Failed to insert log: {e}")
 
-def generate_base_id(length: int = 12) -> str:
+def generate_base_id(length: int = 32) -> str:
     """Generate a random 12-character base_id."""
     return "".join(random.choices(string.ascii_letters + string.digits, k=length))
 
@@ -139,6 +139,40 @@ def insert_chat(input_dict: dict, output_dict: dict):
     conn.commit()
     cur.close()
     conn.close()
+
+def get_chat_history(base_id: str) -> list[dict]:
+    """
+    Retrieve all chat messages for a given base_id.
+    
+    Returns:
+        List of dicts in the form:
+        [{'message': user_text, 'response': model_text}, ...]
+        
+    Messages are ordered by chat_index ascending (1 → N).
+    """
+    conn = get_db_conn()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT user_text, model_text
+        FROM chats
+        WHERE base_id = %s
+        ORDER BY chat_index ASC
+    """, (base_id,))
+    rows = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    history = []
+    for row in rows:
+        user_text, model_text = row
+        history.append({
+            "message": user_text,
+            "response": model_text
+        })
+
+    return history
 
 
 def build_exact_query_and_execute(
