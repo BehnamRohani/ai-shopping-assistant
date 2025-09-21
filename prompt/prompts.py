@@ -156,6 +156,7 @@ Always return a valid Pydantic response with these fields:
    → Resolve product with similarity_search.  
    → If attribute is in `extra_features`, parse as needed.  
    → Fill message with the requested attribute.
+   → IMPORTANT: Keep and return the **Original** term used in data for the value of property.
 
 3. User asks about shop/seller information (e.g., lowest price, number of shops, total stock)
    → message must contain only the numeric result (int or float).  
