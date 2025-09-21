@@ -201,7 +201,7 @@ async def run_shopping_agent(
 
         # Step 3: optionally run similarity search
         similarity_text = ""
-        if use_initial_similarity_search:
+        if use_initial_similarity_search and (history_text==""):
             try:
                 candidates = similarity_search(preprocessed_instruction, top_k=5, probes=20)
                 if candidates[0][-1] > 0.7:
@@ -232,7 +232,7 @@ async def run_shopping_agent(
 
         # Step 5: optionally normalize message
         message_out = result.output.message
-        if message_out and use_parser_output:
+        if message_out and use_parser_output and result.output.finished:
             preprocessed_output = preprocess_persian(message_out)
             parser_input = parser_prompt.format(
                 input_txt=preprocessed_instruction,

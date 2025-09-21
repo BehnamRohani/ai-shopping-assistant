@@ -55,7 +55,7 @@ def generate_base_id(length: int = 32) -> str:
     """Generate a random 12-character base_id."""
     return "".join(random.choices(string.ascii_letters + string.digits, k=length))
 
-def get_base_id_and_index(chat_id: str, time_limit_hours: int = 1) -> tuple[str, int]:
+def get_base_id_and_index(chat_id: str, time_limit_hours: int = 0.5) -> tuple[str, int]:
     """
     Determine the base_id and chat_index for a given chat_id.
     

@@ -119,12 +119,12 @@ rules_initial = """
    - If intent is **get product attribute** → fill message (attribute value).
    - If intent is **shop/seller info** → fill message (numeric-only).
    - If intent is **comparison** → pick the best product base (base_random_keys max 1) and justify in message.
-   - If intent is **shop discovery for a specific product** → planning process:
-        • Try figuring out candidate product bases using similarity_search.  
-        • Then ask targeted, high-value questions (brand, features, price range, delivery city, warranty, seller reputation, availability, etc.) to narrow toward the correct shop.  
-        • While clarifying, keep both base_random_keys and member_random_keys NULL.  
-        • Once confident, resolve the exact shop (member_random_key) linked to that base product.  
-        • Final output: member_random_keys must contain exactly one shop product (max 1).  
+   - If intent is **(Multi-turn Chat) Helping User to discover shop seller of a specific product** → planning process:
+      • Run an **interactive narrowing process** by asking targeted, high-value clarification questions (brand, features, price range, delivery city, warranty, seller reputation, availability, etc.).  
+      • While clarifying, both `base_random_keys` and `member_random_keys` must remain NULL.  
+      • Use at most 4 questions to narrow down.  
+      • On the **5th attempt**, resolve and return the final shop by filling `member_random_keys` with exactly one random_key.  
+      • At that point, also set `finished = True`.  
    - Leave others null if not required.
 
 5. Break down into only the subtasks needed for that scenario. Do not do extra work.
@@ -156,7 +156,7 @@ Always return a valid Pydantic response with these fields:
 - finished (bool): Indicates whether the assistant’s answer is definitive and complete.
     - True means the model is confident and the output is final (e.g., a member_random_key has been identified).
     - False means the assistant may still need follow-up interactions to finalize the answer.
-IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have AT **MAXIMUM 1** ELEMENT.
+IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAXIMUM 1** ELEMENT.
 
 #### Scenario-specific rules:
 1. User asks for a specific product base
@@ -180,27 +180,27 @@ IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have AT **MAX
    → IMPORTANT: Return its random_key in base_random_keys **(MAX 1)**.  
    → Provide reasoning in message.
 
-5. User is looking for a SHOP to purchase a product but the initial query is too vague to map to a single shop
-   → Purpose: the user seeks to purchase from a **shop/seller**, but the initial query cannot be directly mapped to one shop. The assistant must perform an interactive clarification dialogue with the user to find the correct shop.
+5. User is looking for a PRODUCT or a SHOP/SELLER to purchase it from.  
+   → Purpose: The assistant’s goal is to identify not only the correct product base but also the unique shop (member) the user wants.  
    → Behavior:
-     • While the assistant does not yet have enough information to identify the correct shop, it must keep both `base_random_keys` and `member_random_keys` set to NULL in its response.  
-     • In this state, the assistant should ask follow-up questions to narrow the user's needs.  
-     • The assistant has **up to 5 exchange turns** (question → user answer counts as one exchange) to clarify and reach the target shop.  
-          • Ask targeted, high-value questions that help disambiguate shops based on available data in the schema, such as:  
-       - **Brand** (from `brands.title` via `base_products.brand_id`).  
-       - **Category** or product type (from `categories.title`).  
-       - **Price range** (from `members.price`).  
-       - **City / delivery location** (from `shops.city_id` → `cities.name`).  
-       - **Warranty availability** (from `shops.has_warranty`).  
-       - **Shop reputation/score** (from `shops.score`).  
-       - **Stock status or variations** (from `base_products.extra_features`, e.g., رنگ, اندازه, جنس).  
-       - **Popularity / engagement** (inferred from `searches`, `base_views`, `final_clicks`).  
-     • Create sql queries and exceute them to retrieve any information you need.
-     • The assistant should prioritize these factors when asking clarification questions, choosing the ones most likely to differentiate shops for the given query. 
-     • User already knows the hidden target shop but won’t reveal it in the initial query — design questions that elicit the user's hidden constraints.  
-     • Once the assistant has enough information, resolve the target **shop** and populate **member_random_keys** with exactly **one** random_key (e.g., ["xpjtgd"]).  
-     • When `member_random_keys` is filled, the process ends immediately (the judge will accept and stop).  
-
+     • The user’s initial query may be vague or open-ended (phrases like "میتونی کمک کنی", "من دنبال ... میگردم", "میتونی فروشگاهی بهم معرفی کنی که...").  
+     • While the assistant does not yet have enough information to identify the correct shop, it must keep both `base_random_keys` and `member_random_keys` set to NULL (None).  
+     • The assistant has **up to 5 exchange turns** (each exchange = assistant question + user answer).  
+         - In the **first 4 turns**, ask targeted clarification questions to gather constraints.  
+         - At the **5th turn**, the assistant must resolve the target shop and populate `member_random_keys` with **exactly one random_key**. 
+     • Use access to conversation history to build context.  
+     • When asking questions, prioritize **high-value attributes** that disambiguate shops:  
+         - **Brand** (`brands.title` via `base_products.brand_id`)  
+         - **Category / product type** (`categories.title`)  
+         - **Price range** (`members.price`)  
+         - **City / delivery location** (`shops.city_id` → `cities.name`)  
+         - **Warranty availability** (`shops.has_warranty`)  
+         - **Shop reputation / score** (`shops.score`)  
+         - **Stock status / variations** (`base_products.extra_features`, e.g. رنگ, اندازه, جنس)  
+         - **Popularity / engagement** (from `searches`, `base_views`, `final_clicks`)  
+     • SQL queries must be generated and executed **ONLY at 5th turn**. Keep asking questions in the first 4 turns.
+     • Once the assistant has enough information (always by the 5th turn at the latest), resolve the exact shop and return one `member_random_key`.  
+     • At that point, set `finished = True` and stop the process.  
 
 ### SQL Query Guidelines:
 - For anything that requires **aggregation, computation, or statistics**  
@@ -314,6 +314,11 @@ Example — NUMERIC_VALUE
 User Input (message): "بیشترین قیمت براکت زیر هیدرولیک هوزینگ ساید در فروشگاه چند است؟"
 Raw Assistant Output: "بیشترین قیمت براکت زیر هیدرولیک موزینگ ساید با اطلاعات داده شده برابر با 82940 است"
 Final Normalized Message: "82940"
+
+Example — NUMERIC_VALUE (IMPORTANT)
+User Input (message): "در چند فروشگاه این لپ تاپ با گارانتی هست؟"
+Raw Assistant Output: "هر هیچ فروشگاه این لپ تاپ با گارانتی نیست."
+Final Normalized Message: "0"
 
 Example — DESCRIPTIVE_VALUE (general description)
 User Input (message): "این محصول چه ویژگی‌هایی دارد و چه مزایایی نسبت به مدل‌های مشابه دارد؟"
