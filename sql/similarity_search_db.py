@@ -30,33 +30,36 @@ def get_embedding(text):
         input=text
     )
     return response.data[0].embedding
-
-def similarity_search(query, top_k=5):
+def similarity_search(query, top_k: int = 5, probes: int = 10):
     """
-    Perform a similarity search in the product_embed table.
-    
+    Perform a similarity search in the product_embed table using pgvector IVFFlat index.
+
     Args:
         query (str): The query text.
         top_k (int): Number of similar items to return.
-    
+        probes (int): Number of IVF lists to probe (higher = better recall, slower).
+
     Returns:
         List of tuples: [(random_key, persian_name, similarity_score), ...]
     """
-    query_vector = get_embedding(query)
+    query_vector = get_embedding(query)  # list[float]
     query_vector_str = "[" + ",".join(map(str, query_vector)) + "]"
 
-
-    results = []
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
-            # Use pgvector cosine similarity
-            cur.execute(f"""
-                SELECT random_key, persian_name, 1 - (embedding <=> %s) AS similarity
+            # Force use of IVFFlat index
+            cur.execute("SET enable_seqscan = off;")
+            cur.execute("SET ivfflat.probes = %s;", (probes,))
+
+            cur.execute("""
+                SELECT random_key,
+                       persian_name,
+                       ROUND(1 - (embedding <=> %s), 4) AS similarity
                 FROM product_embed
                 ORDER BY embedding <=> %s
                 LIMIT %s
             """, (query_vector_str, query_vector_str, top_k))
-            
+
             results = cur.fetchall()
 
     return results

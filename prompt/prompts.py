@@ -67,10 +67,11 @@ Example: Features may be width (عرض), height (ارتفاع), size (انداز
 tools_info = """
 You have access to the following tools:
 
-1. similarity_search(query: str, top_k: int = 5) -> list[tuple[str, str, float]]:
+1. similarity_search(query: str, top_k: int = 5, probes: int = 10) -> list[tuple[str, str, float]]:
    Performs a semantic similarity search in the products database using pgvector embeddings.  
    Returns a list of tuples: (random_key, persian_name, similarity_score).  
    → Use this when retrieving product random_key(s) from user queries, even if the product name is slightly different.  
+   → `top_k` controls how many candidates to retrieve; `probes` controls recall vs. speed.  
 
 2. generate_sql_query(instruction: str) -> tuple[str, str]: 
    Generates a PostgreSQL query from natural language.
@@ -136,12 +137,9 @@ instructions_generated = """
 - Use `similarity_search` to retrieve base_random_key and resolve product references from user text.  
 
 ## Important: Interpreting similarity_search results
-- Always use `similarity_search` with the given query to resolve product names.  
-- Product names may not match user text exactly, but similarity search handles this.  
+- Always use `similarity_search` with the given query to retrieve base random key of a product.  
 - If `similarity_search` returns **extremely irrelevant results** (clearly unrelated to the query),  
   immediately assume the product does **not exist** in the database.  
-- If the top results are **somewhat relevant but differ in crucial details**,  
-  you may optionally retry with a larger `top_k` (e.g., 10 or 20) to widen the search space.  
 - Interpret results also by similarity score:  
   • A high score (e.g., ≥ 0.8 cosine similarity) usually indicates a strong match.  
   • A very low score (e.g., ≤ 0.4) means the result is almost certainly not relevant.  
