@@ -126,7 +126,8 @@ from typing import Tuple, Optional
 async def run_shopping_agent(
     instruction: str,
     use_initial_plan: bool = True,
-    use_parser_output: bool = True
+    use_parser_output: bool = True,
+    use_initial_similarity_search: bool = True,
 ) -> Tuple[Optional[ShoppingResponse], dict]:
     """
     Execute the Torob Shopping Assistant pipeline for a given user instruction.
@@ -135,12 +136,14 @@ async def run_shopping_agent(
         instruction (str): User input.
         use_initial_plan (bool): If True, generate a high-level plan via CoT agent.
         use_parser_output (bool): If True, normalize final message using parser agent.
+        use_initial_similarity_search (bool): If True, run similarity search first and include results in prompt.
 
     Steps:
     1. Preprocess the user instruction (Persian normalization).
     2. Optionally generate a high-level plan using the CoT agent.
-    3. Run the shopping agent with the combined input and (optional) plan.
-    4. Optionally normalize the output message via the parser agent.
+    3. Optionally run similarity search and append candidates.
+    4. Run the shopping agent with combined input, plan, and candidates.
+    5. Optionally normalize the output message via the parser agent.
 
     Returns:
         Tuple[ShoppingResponse | None, dict]:
@@ -164,17 +167,34 @@ async def run_shopping_agent(
             plan_text = plan_output.output or ""
             print(plan_text)
 
-        # Step 3: run shopping agent
+        # Step 3: optionally run similarity search
+        similarity_text = ""
+        if use_initial_similarity_search:
+            try:
+                candidates = similarity_search(preprocessed_instruction, top_k=5, probes=20)
+                # candidates is expected to be list[tuple[str, str, float]]
+                rows = []
+                for rk, name, score in candidates:
+                    rows.append(f"{rk} -> {name} -> similarity: {score:.3f}")
+                similarity_text = "\n".join(rows)
+                print("Similarity search results:\n", similarity_text)
+            except Exception as e:
+                print(f"Similarity search failed: {e}")
+
+        # Step 4: build prompt for shopping agent
         prompt = "Input: " + preprocessed_instruction
         if plan_text:
-            prompt += "\n\n" + plan_text
+            prompt += "\n\nPlan:\n" + plan_text
+        if similarity_text:
+            prompt += "\n\nInitial Similarity Search Candidates:\n" + similarity_text
+            prompt += "\n" + "The initial similarity search results are provided for convenience, but you should also invoke similarity_search yourself whenever product identification is required."
 
         result = await shopping_agent.run(prompt, usage_limits=usage_limits)
 
         # Convert to dict for output formatting
         output_dict = dict(result.output)
 
-        # Step 4: optionally normalize message
+        # Step 5: optionally normalize message
         message_out = result.output.message
         if message_out and use_parser_output:
             preprocessed_output = preprocess_persian(message_out)

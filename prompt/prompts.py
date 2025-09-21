@@ -103,6 +103,7 @@ rules_initial = """
 2. Product name extraction (CRITICAL):
    - Always extract the **full** product name from user input. Do not truncate or drop adjectives/brand/size/color.
    - Preserve Persian tokens exactly when running searches.
+   - ⚠️ Important: Some product features (e.g., size "۱۷ تا ۵۵ اینچ") may appear **inside the product name itself**, not in extra_features. Treat them as part of the full name.
 
 3. Always use similarity_search:
    - similarity_search(query: str, top_k: int = 5, probes: int = 20)  
@@ -149,6 +150,7 @@ Always return a valid Pydantic response with these fields:
 1. User asks for a specific product base
    → Use similarity_search on the **full product name**.  
    → Fill base_random_keys with the best match (max 1).
+   → ⚠️ Remember: product features such as size ranges or color (e.g., "۱۷ تا ۵۵ اینچ" or "رنگ قرمز") may appear directly in the product name itself. Do not strip them out.
 
 2. User asks for an attribute/property of a product
    → Resolve product with similarity_search.  
@@ -183,7 +185,7 @@ Always return a valid Pydantic response with these fields:
   • A very low score (e.g., ≤ 0.4) means the result is almost certainly not relevant.  
   • Scores in the middle require judgment — check the product name/content.  
 - Pick the best matching product only if it is a reasonable match. 
-- Never give up too soon. If no reasonable match is found, check with a different query (product name).
+- Never give up too soon. If no reasonable match is found, try `similarity_search` with a different query (product name) or parameters (top_k or probes) until a match is found.
 """
 
 system_role_initial = """
