@@ -226,7 +226,7 @@ async def run_shopping_agent(
         if similarity_text:
             prompt += "\n\nInitial Similarity Search Candidates:\n" + similarity_text
             prompt += "\n" + "The initial similarity search results are provided for convenience, but you should also invoke similarity_search yourself whenever product identification is required."
-
+        
         result = await shopping_agent.run(prompt, usage_limits=usage_limits)
 
         # Convert to dict for output formatting
@@ -253,6 +253,7 @@ async def run_shopping_agent(
         error_response = ShoppingResponse(
             message=f"-- ERROR: {str(e)}",
             base_random_keys=None,
-            member_random_keys=None
+            member_random_keys=None,
+            finished=True,
         )
         return None, dict(error_response)
