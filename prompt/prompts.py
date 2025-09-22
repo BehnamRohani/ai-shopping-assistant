@@ -167,7 +167,13 @@ rules_initial = """
   either:  
     • write the full SQL query yourself and run it with `execute_sql`, or  
     • use `generate_sql_query` to create the SQL, then run it with `execute_sql`.  
-- Use `similarity_search` to map user text → product random_key(s).  
+- Use `similarity_search` to map user text → product random_key(s). 
+
+## This rule **ONLY** applies to **initating a conversation** where some general product names may appear in SQL.  
+   - ⚠️ When generating SQL queries that check or filter by product name (`persian_name`),  
+   **use `LIKE '%...%'` instead of `=`** when the name is general and not detailed.  
+   • Persian names in user input may be partial, vague, or slightly different from the database value.  
+   • Using `LIKE` in SQL ensures broader coverage.  
 
 ### Special handling for extra_features:
 - `extra_features` is stored as a TEXT column with JSON-like content.
@@ -224,7 +230,7 @@ IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAX
    → Behavior:
      • The user’s initial query contains phrases like "میتونی کمک کنی", "من دنبال ... میگردم", "میتونی فروشگاهی بهم معرفی کنی که...".  
      • While the assistant does not yet have enough information to identify the correct shop, it must keep both `base_random_keys` and `member_random_keys` set to NULL (None).  
-     • The assistant has **up to 5 exchange turns** (each exchange = assistant question + user answer).  
+     • The assistant has **up to 5 exchange turns** (each exchange = user question + assistant answer).  
          - In the **first 4 turns**, ask targeted clarification questions to gather constraints.  
          - At the **5th turn**, the assistant must resolve the target shop and populate `member_random_keys` with **exactly one random_key**. 
      • Ask about these in order: Note that you only have **4 CHANCES to retrieve info** and on the 5th try **YOU HAVE TO RETURN member_random_key**.
@@ -235,6 +241,10 @@ IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAX
          - **Stock status / variations** (`base_products.extra_features`, e.g. رنگ, اندازه, جنس) and 
          - **Brand** (`brands.title` via `base_products.brand_id`)
      • SQL queries must be generated and executed **ONLY at 5th turn**. Keep asking questions in the first 4 turns.
+         - When generating the **final SQL query to check if a seller/shop exists** for those bases,  
+         you must use: `WHERE base_products.persian_name LIKE '%<term>%'` instead of strict equality (`=`).  
+         - Persian product names are often vague or partial — **LIKE ensures coverage**.  
+         - This applies to **every SQL condition** on `persian_name` inside the conversation.  
      • Once the assistant has enough information (always by the 5th turn at the latest), **resolve the exact shop and return one `member_random_key`**.  
      • At that point, set `finished = True` and stop the process.  
 
@@ -245,6 +255,12 @@ IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAX
     • write the full SQL query yourself and run it with `execute_sql`, or  
     • use `generate_sql_query` to create the SQL, then run it with `execute_sql`.  
 - Use `similarity_search` to retrieve base_random_key and resolve product references from user text.  
+
+## This rule **ONLY** applies to **initating a conversation** where some general product names may appear in SQL.  
+   - ⚠️ When generating SQL queries that check or filter by product name (`persian_name`),  
+   **use `LIKE '%...%'` instead of `=`** when the name is general and not detailed.  
+   • Persian names in user input may be partial, vague, or slightly different from the database value.  
+   • Using `LIKE` in SQL ensures broader coverage.  
 
 ### Special handling for extra_features:
 - `extra_features` is stored as a TEXT column with JSON-like content.
