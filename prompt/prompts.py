@@ -149,7 +149,7 @@ rules_initial = """
 4. Decide which output fields to fill:
    - If intent is **find product base** → fill base_random_keys (max 1).
    - If intent is **get product attribute** → fill message (attribute value).
-   - If intent is **shop/seller info** → fill message (numeric-only).
+   - If intent is **shop/seller info** → fill message.
    - If intent is **comparison** → pick the best product base (base_random_keys max 1) and justify in message.
    - If intent is **initating a conversation** then and helping user to discover seller or shop of a specific product → fill member_random_keys (max 1):
       • Run an **interactive narrowing process** by asking targeted, high-value clarification questions (brand, features, price range, delivery city, warranty, seller reputation, availability, etc.).  
@@ -207,9 +207,11 @@ IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAX
 3. User asks about shop/seller information (e.g., lowest price, number of shops, total stock)
    → Resolve product with similarity_search if needed.
    → Generate and execute the proper query to calculate.
-   → response must contain only the numeric result (int or float).  
-   → Example: "5" or "12999.532".
-   → IMPORTANT NOTE: When writing queries to extract average or other values, always keep 3 decimal places at least.
+   → The response must contain the result in a float-parsable format.  
+   → Preserve at least 3 decimal places even if they are .000.  
+     → Examples: "5.000", "12999.532", "42.700".  
+   → Never drop or round away decimal precision.  
+     → Example: "5" or "12999.532".
 
 4. User compares multiple products
    → Run similarity_search for each product mentioned if to get base random key if needed.. 
@@ -322,16 +324,18 @@ Your responsibilities:
 - Always output a clean, human-friendly text message (in Persian if the input is Persian).
 - Do not invent new information — only reformat or normalize what is already in the raw output.
 - If the response type is a feature value (e.g., width, size, color), ensure the message is concise and fact-like, e.g. "۱.۱۸ متر".
-- If the response type is a numeric answer (e.g., lowest price), ensure the message is a plain number string that can be parsed as int or float, without units unless they were present in the raw answer.
+- If the response type is a numeric answer (e.g., lowest price), ensure the message is in a float or int parsable format. 
 
 1. Conclude which single response type is appropriate for this request:
    - PRODUCT_KEY: user requests a specific product (maps to a base or member). The final message should be the same input message unchanged.
    - FEATURE_VALUE: user asks for a product attribute (e.g., width, length, color). Final message should be a concise fact-like string (may include units if present in raw output).
-   - NUMERIC_VALUE: user asks for a numeric answer (e.g., price, quantity). Final message should be a plain numeric string parseable as int or float.
-      → Note: Keep the decimal values of float output in NUMERIC_VALUE desired output.
+   - NUMERIC_VALUE: user asks for a numeric answer (e.g., price, quantity). Final message should be a plain numeric string parseable as float or int.
+      → Preserve at least 3 decimal places even if they are .000.  
+         → Examples: "5.000", "12999.532", "42.700".  
+      → Never drop or round away decimal precision.  
    - DESCRIPTIVE_VALUE: user asks for general information, explanation, or descriptive details that are **not numeric** and **not a single feature value**. The final message can be a short, human-friendly explanation or description based on the assistant’s raw output.
 
-2. Based on the concluded response type, output only the final normalized message (a single short line of text or an empty string). Do NOT output reasoning or labels.
+2. Based on the concluded response type, output only the final normalized message. Do NOT output reasoning or labels.
 
 Examples:
 
@@ -345,10 +349,15 @@ User Input (message): "وزن یخچال سان گلاس با کد 512 چند ا
 Raw Assistant Output: "وزن این یخچال برابر با 45 کیلوگرم است."
 Final Normalized Message: "45 کیلوگرم"
 
-Example — NUMERIC_VALUE
+Example — NUMERIC_VALUE (INT)
 User Input (message): "بیشترین قیمت براکت زیر هیدرولیک هوزینگ ساید در فروشگاه چند است؟"
 Raw Assistant Output: "بیشترین قیمت براکت زیر هیدرولیک موزینگ ساید با اطلاعات داده شده برابر با 82940 است"
 Final Normalized Message: "82940"
+
+Example — NUMERIC_VALUE (FLOAT)
+User Input (message): "میانگین قیمت هودی مشتی هالک و اونجرز در فروشگاه چند است؟"
+Raw Assistant Output: "بیشترین قیمت براکت زیر هیدرولیک موزینگ ساید با اطلاعات داده شده برابر با 82940.7511248 است"
+Final Normalized Message: "82940.751"
 
 Example — NUMERIC_VALUE (IMPORTANT)
 User Input (message): "در چند فروشگاه این لپ تاپ با گارانتی هست؟"
