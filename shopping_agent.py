@@ -184,7 +184,7 @@ async def run_shopping_agent(
         history_text = ""
         if history:
             history_text = "\n".join(
-                [f"({(i+1)}). Message: {h['message']}\n{(i+1)}. Response: {h['response']}" for i,h in enumerate(history)]
+                [f"Message No.({(i+1)}): {h['message']}\nResponse No.({(i+1)}): {h['response']}" for i,h in enumerate(history)]
             )
         print(history_text)
 
@@ -219,7 +219,7 @@ async def run_shopping_agent(
         if history_text:
             prompt += "Conversation history:\n" + history_text + "\n\n"
         if len(history) ==4:
-            prompt += "This is the Fifth turn. You must answer the user definitively.\n"
+            prompt += "This is the Fifth turn. Your response is the end of conversation. You must answer the user now definitively.\n"
         prompt += "Input: " + preprocessed_instruction
         if plan_text:
             prompt += "\n\nPlan:\n" + plan_text

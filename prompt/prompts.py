@@ -156,7 +156,7 @@ rules_initial = """
       • Run an **interactive narrowing process** by asking targeted, high-value clarification questions (brand, features, price range, delivery city, warranty, seller reputation, availability, etc.).  
       • While clarifying, both `base_random_keys` and `member_random_keys` must remain NULL.  
       • Use at most 4 questions to narrow down.  
-      • IMPORTANT: On the **5th attempt**, resolve and return the final shop **by filling `member_random_keys`** with exactly **one random_key**.  
+      • IMPORTANT: On the **5th attempt** the conversation should **END**, so try resolve and return the final shop **by filling `member_random_keys`** with exactly **one random_key**.  
       • At that point, also set `finished = True`.  
    - Leave others null if not required.
 
@@ -177,7 +177,8 @@ rules_initial = """
 - Always answer directly to the user’s intent.  
 - Keep the plan short, avoid extra steps.  
 - Never add member/shop details unless explicitly asked.  
-- When comparing multiple bases, always justify clearly **why** one is chosen over the others.  
+- When comparing multiple bases, always justify clearly **why** one is chosen over the others. 
+- IMPORTANT: In conversation scnearios with chat history, the conversation should **END** in the **5th turn**. So try all you can do by then.
 """
 
 instructions_generated = """
