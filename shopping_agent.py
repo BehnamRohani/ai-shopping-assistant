@@ -184,7 +184,7 @@ async def run_shopping_agent(
         history_text = ""
         if history:
             history_text = "\n".join(
-                [f"{(i+1)}. Message: {h['message']}\n{(i+1)}. Response: {h['response']}" for i,h in enumerate(history)]
+                [f"({(i+1)}). Message: {h['message']}\n{(i+1)}. Response: {h['response']}" for i,h in enumerate(history)]
             )
         print(history_text)
 
@@ -194,7 +194,7 @@ async def run_shopping_agent(
         # Step 2: optionally generate plan
         plan_output = None
         plan_text = ""
-        if use_initial_plan and (chat_index == 1):
+        if use_initial_plan and (chat_index == 1 or chat_index == 5):
             plan_output = await cot_agent.run(preprocessed_instruction)
             plan_text = plan_output.output or ""
             print(plan_text)
@@ -218,6 +218,8 @@ async def run_shopping_agent(
         prompt = ""
         if history_text:
             prompt += "Conversation history:\n" + history_text + "\n\n"
+        if len(history) ==4:
+            prompt += "This is the Fifth turn. You must answer the user definitively.\n"
         prompt += "Input: " + preprocessed_instruction
         if plan_text:
             prompt += "\n\nPlan:\n" + plan_text
