@@ -191,15 +191,7 @@ async def run_shopping_agent(
         # Step 1: preprocess input
         preprocessed_instruction = preprocess_persian(instruction)
 
-        # Step 2: optionally generate plan
-        plan_output = None
-        plan_text = ""
-        if use_initial_plan and (chat_index == 1 or chat_index == 5):
-            plan_output = await cot_agent.run(preprocessed_instruction)
-            plan_text = plan_output.output or ""
-            print(plan_text)
-
-        # Step 3: optionally run similarity search
+        # Step 2: optionally run similarity search
         similarity_text = ""
         if use_initial_similarity_search and (history_text==""):
             try:
@@ -214,13 +206,21 @@ async def run_shopping_agent(
             except Exception as e:
                 print(f"Similarity search failed: {e}")
 
-        # Step 4: build prompt for shopping agent
+        # Step 3: build prompt for shopping agent
         prompt = ""
         if history_text:
             prompt += "Conversation history:\n" + history_text + "\n\n"
         if chat_index ==5:
             prompt += "[IMPORTANT] This is the Fifth turn. Your response is the end of conversation. You must answer the user now definitively.\n"
         prompt += "Input: " + preprocessed_instruction
+
+        # Step 4: optionally generate plan
+        plan_output = None
+        plan_text = ""
+        if use_initial_plan and (chat_index == 1 or chat_index == 5):
+            plan_output = await cot_agent.run(prompt)
+            plan_text = plan_output.output or ""
+            print(plan_text)
         if plan_text:
             prompt += "\n\nPlan:\n" + plan_text
         if similarity_text:
