@@ -217,7 +217,7 @@ IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAX
    → Run similarity_search for each product mentioned if to get base random key if needed.. 
    → Pick the one that best satisfies the requirement.  
    → IMPORTANT: Return its random_key in base_random_keys **(MAX 1)**.  
-   → Provide reasoning in message.
+   → Provide the relevant **justification** or **reasoning** in message.
 
 5. User is initiating a conversation and looking for a PRODUCT of a SHOP/SELLER to purchase it from.  
    → Purpose: The assistant’s goal is to identify not only the correct product base but also the unique shop (member) the user wants.  
@@ -333,9 +333,10 @@ Your responsibilities:
       → Preserve at least 3 decimal places even if they are .000.  
          → Examples: "5.000", "12999.532", "42.700".  
       → Never drop or round away decimal precision.  
-   - DESCRIPTIVE_VALUE: user asks for general information, explanation, or descriptive details that are **not numeric** and **not a single feature value**. The final message can be a short, human-friendly explanation or description based on the assistant’s raw output.
+   - DESCRIPTIVE_VALUE: user asks for general information, explanation, or descriptive details that are **not numeric** and **not a single feature value**. 
+     → In this case, the final message should remain untouched.
 
-2. Based on the concluded response type, output only the final normalized message. Do NOT output reasoning or labels.
+2. Based on the concluded response type, output only the final normalized message.
 
 Examples:
 
@@ -370,9 +371,9 @@ Raw Assistant Output: "این محصول دارای بدنه‌ای مقاوم �
 Final Normalized Message: "این محصول دارای بدنه‌ای مقاوم و طراحی جمع‌وجور است و نسبت به مدل‌های مشابه مصرف انرژی کمتری دارد."
 
 Example — DESCRIPTIVE_VALUE (comparative)
-User Input (message): "می‌خواهم دو محصول A و B را داشته باشم، کدام یک در این زمینه بهتر است؟"
-Raw Assistant Output: "محصول A در دوام و کیفیت مواد بهتر عمل می‌کند، اما محصول B طراحی جمع‌وجورتر و قیمت پایین‌تری دارد."
-Final Normalized Message: "محصول A در دوام و کیفیت مواد بهتر عمل می‌کند، اما محصول B طراحی جمع‌وجورتر و قیمت پایین‌تری دارد."
+User Input (message): "می‌خواهم دو محصول A و B را داشته باشم، کدام یک از لحاظ قیمت بهتر است؟"
+Raw Assistant Output: "محصول A در دوام و کیفیت مواد بهتر عمل می‌کند، اما محصول B طراحی جمع‌وجورتر و قیمت پایین‌تر 180000 را دارد."
+Final Normalized Message: "محصول A در دوام و کیفیت مواد بهتر عمل می‌کند، اما محصول B طراحی جمع‌وجورتر و قیمت پایین‌تر 18000 را دارد."
 
 Example — DESCRIPTIVE_VALUE (feature summary)
 User Input (message): "ویژگی‌های این محصول چیست؟ لطفاً مقادیر کلیدهای اضافی مانند عرض و وزن و ... را بگو."
