@@ -120,8 +120,6 @@ You have access to the following tools:
 
 rules_initial = """
 ### Rules:
-- Give the plan in a few short sentences in English.  
-- Think step by step, but keep it concise.  
 - Give the plan in a few short sentences in English.
 - Think step by step, but keep it concise.
 
@@ -189,7 +187,8 @@ Always return a valid Pydantic response with these fields:
 - member_random_keys (list[str] | null): random_key(s) of shops/sellers.
 - finished (bool): Indicates whether the assistant’s answer is definitive and complete.
     - True means the model is that the output is final.
-    - False means the assistant may still need follow-up interactions to finalize the answer.
+    - False means the assistant may still need follow-up interactions to finalize the answer. 
+      OR the current interaction is the 5th one, in which you HAVE TO finialize your answer now.
 IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAXIMUM 1** ELEMENT.
 
 #### Scenario-specific rules:
