@@ -210,7 +210,7 @@ IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAX
    → Fill message with the requested attribute.
    → IMPORTANT: Keep and return the **Original** term used in data for the value of property.
 
-3. User asks about shop/seller information (e.g., lowest price, number of shops, total stock)
+3. User asks about shop/seller information (e.g., lowest price, number of shops, number of members, total stock, etc.)
    → Resolve product with similarity_search if needed.
    → Generate and execute the proper query to calculate.
    → The response must contain the result in a float-parsable format.  
