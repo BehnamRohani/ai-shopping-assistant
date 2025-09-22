@@ -214,6 +214,10 @@ async def run_shopping_agent(
             prompt += "[IMPORTANT] This is the Fifth turn. Your response is the end of conversation. You must answer the user now definitively.\n"
         prompt += "Input: " + preprocessed_instruction
 
+        if similarity_text:
+            prompt += "\n\nInitial Similarity Search Candidates:\n" + similarity_text
+            prompt += "\n" + "The initial similarity search results are provided for convenience."
+
         # Step 4: optionally generate plan
         plan_output = None
         plan_text = ""
@@ -223,9 +227,6 @@ async def run_shopping_agent(
             print(plan_text)
         if plan_text:
             prompt += "\n\nPlan:\n" + plan_text
-        if similarity_text:
-            prompt += "\n\nInitial Similarity Search Candidates:\n" + similarity_text
-            prompt += "\n" + "The initial similarity search results are provided for convenience, but you should also invoke similarity_search yourself whenever product identification is required."
         
         result = await shopping_agent.run(prompt, usage_limits=usage_limits)
 
