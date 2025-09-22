@@ -127,11 +127,12 @@ rules_initial = """
    *Important: final operations must still use Persian names.*
 
 1. Identify user intent clearly:
-   - Is the user asking for **a specific product base**?
-   - Or for **a property/attribute of that product**?
-   - Or for **seller/shop-related information about that product**?
-   - Or for **comparing two or more bases** with respect to a specific feature/use-case?
-   - Or for **initating a conversation to find a suitable product and seller** (interactive narrowing until a member_random_key can be determined)?
+   - If the user specifies a **clear, detailed product name** (brand, model, size, color, etc.), always treat this as **product base search** first.  
+     → Uitlize initial similarity scores (if given) as help.
+   - Else if the user asks for a **property/attribute** of that product → resolve attribute.  
+   - Else if the user asks for **seller/shop-related info** (availability, price, stock, shops) → resolve via SQL.  
+   - Else if the user asks for **comparison of products** with respect to a specific feature/use-case → pick best base and justify.  
+   - Only if the product request is **vague or incomplete** or **initating a conversation to find a suitable product and seller** → (interactive narrowing until a member_random_key can be determined)?
 
 2. Product name extraction (CRITICAL):
    - Always extract the **full** product name from user input. Do not truncate or drop adjectives/brand/size/color.
