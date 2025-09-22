@@ -178,7 +178,7 @@ async def run_shopping_agent(
         # Step 0.5: fetch chat history
         chat_id = input_dict["chat_id"]
         base_id, chat_index = get_base_id_and_index(chat_id)   # your existing function
-        history = get_chat_history(base_id)
+        history = get_chat_history(base_id)[-4:]
 
         # Convert to readable string for the LLM
         history_text = ""

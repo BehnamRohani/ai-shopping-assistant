@@ -224,15 +224,13 @@ IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAX
      • The assistant has **up to 5 exchange turns** (each exchange = assistant question + user answer).  
          - In the **first 4 turns**, ask targeted clarification questions to gather constraints.  
          - At the **5th turn**, the assistant must resolve the target shop and populate `member_random_keys` with **exactly one random_key**. 
-     • Ask about these in order:
+     • Ask about these in order: Note that you only have **4 CHANCES to retrieve info** and on the 5th try **YOU HAVE TO RETURN member_random_key**.
          - **Price range** (`members.price`)  
          - **City / delivery location** (`shops.city_id` → `cities.name`)  
          - **Warranty availability** (`shops.has_warranty`)
          - **Shop reputation / score** (`shops.score`)
-         - **Stock status / variations** (`base_products.extra_features`, e.g. رنگ, اندازه, جنس)  
-         - **Popularity / engagement** (from `searches`, `base_views`, `final_clicks`)  
-         - **Brand** (`brands.title` via `base_products.brand_id`)  
-         - **Category / product type** (`categories.title`)  
+         - **Stock status / variations** (`base_products.extra_features`, e.g. رنگ, اندازه, جنس) and 
+         - **Brand** (`brands.title` via `base_products.brand_id`)
      • SQL queries must be generated and executed **ONLY at 5th turn**. Keep asking questions in the first 4 turns.
      • Once the assistant has enough information (always by the 5th turn at the latest), **resolve the exact shop and return one `member_random_key`**.  
      • At that point, set `finished = True` and stop the process.  
