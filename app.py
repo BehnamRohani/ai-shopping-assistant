@@ -53,6 +53,8 @@ RE_MEMBER = re.compile(r"return member random key:\s*([A-Za-z0-9\-_:]+)", re.IGN
 
 usage_limits = UsageLimits(request_limit=30, tool_calls_limit=30, output_tokens_limit=4096)
 
+myagent = TorobHybridAgent()
+
 # ------ Endpoint ------
 @app.post("/chat", response_model=ChatResponse)
 async def chat(req: ChatRequest):
@@ -108,7 +110,6 @@ async def chat(req: ChatRequest):
         #                                           use_parser_output=True,
         #                                           use_initial_similarity_search=True)
 
-        myagent = TorobHybridAgent()
         result, output_dict = await myagent.run(input_dict=input_dict,
                                                 usage_limits=usage_limits,
                                                 use_initial_similarity_search=True)
