@@ -477,7 +477,6 @@ class TorobHybridAgent(TorobAgentBase):
                 _, class_out = await classifier_agent.run(instruction, usage_limits=usage_limits)
                 scenario_label = class_out.classification
                 print(scenario_label)
-                scenario_agent = TorobScenarioAgent(scenario_label)
             else:
                 history_text = "\n".join(
                     [f"Input No.({(i+1)}): {h['message']}\nResponse No.({(i+1)}): {h['response']}" for i,h in enumerate(history)]
@@ -486,6 +485,8 @@ class TorobHybridAgent(TorobAgentBase):
                 prompt += "Conversation history:\n" + history_text + "\n\n"
                 if chat_index ==5:
                     prompt += "[IMPORTANT] This is the Fifth turn. Your response is the end of conversation. You must answer the user now definitively.\n"
+            
+            scenario_agent = TorobScenarioAgent(scenario_label)
             # Step 1: preprocess input
             preprocessed_instruction = preprocess_persian(instruction)
 
