@@ -236,7 +236,7 @@ IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAX
      • The user’s initial query may contain phrases like "میتونی کمک کنی", "من دنبال ... میگردم", "میتونی فروشگاهی بهم معرفی کنی که...".  
      • You have **up to 5 exchange turns** total (assistant question + user answer count as one exchange).
      • **Turns 1–4 (productive turns):**
-         - Run a correct SQL query to **fetch up to 3 candidate members (sellers)**.  
+         - Run a lightweight SQL query to **fetch up to 3 candidate members (sellers)**.  
            Include their information such as **shop_id, shop name, price, base product name, etc.** (`base_products.persian_name`).  
            Present these 3 as concrete seller suggestions to the user.  
          - Then, ask the user what is missing/wrong in those suggestions, and in the same turn also ask for **all high-value constraints together** (price range, city, warranty, brand, seller score, stock/variation, etc.).  
@@ -261,9 +261,9 @@ IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAX
 
 ## This rule **ONLY** applies to **initating a conversation** where some general product names may appear in SQL.  
    - ⚠️ When generating SQL queries that check or filter by product name (`persian_name`),  
-   **use `LIKE '%...%'` instead of `=`** when the name is general and not detailed.  
+   **use `LIKE '%...%'` and instead of `=`** when the name is general and not detailed.  
    • Persian names in user input may be partial, vague, or slightly different from the database value.  
-   • Using `LIKE` in SQL ensures broader coverage.  
+   • Using `LIKE` in SQL ensures broader coverage.
 
 ### Special handling for extra_features:
 - `extra_features` is stored as a TEXT column with JSON-like content.
@@ -421,4 +421,24 @@ Instructions:
 - Do NOT add explanations, labels, JSON, or any other extra text.
 
 Final Normalized Message:
+"""
+
+import pickle
+with open("../categories.pkl", "rb") as f:
+    loaded_titles = pickle.load(f)
+
+labels_quotes = [f'"{x}"' for x in loaded_titles]
+
+image_label_system_prompt = f"""
+You are an image understanding assistant for Torob.
+Given a text instruction and an image, return:
+- description: short one-line caption in Persian
+- long_description: detailed description in Persian
+- candidates: up to 5 short possible persian labels from category names
+- main_topic: main subject/topic of the image picked from candidates.
+
+The candidates must come from the name of categories below:
+
+{", ".join(labels_quotes)}
+
 """

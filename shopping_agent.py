@@ -26,11 +26,12 @@ from pydantic_ai import Agent, UsageLimits, ModelSettings
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from sql.sql_agent import generate_sql_query
-from sql.sql_utils import execute_sql, build_like_query_and_execute, build_exact_query_and_execute
+from sql.sql_utils import execute_sql
 from prompt.prompts import *
 from utils.utils import preprocess_persian
 from sql.similarity_search_db import similarity_search
 from sql.sql_utils import get_chat_history, get_base_id_and_index
+from typing import Tuple, Optional
 
 
 # load environment
@@ -48,6 +49,7 @@ DB_CONFIG = {
 INITIAL_THOUGHT_MODEL = os.getenv("INITIAL_THOUGHT_MODEL")
 SHOPPING_MODEL = os.getenv("SHOPPING_MODEL")
 OUTPUT_PARSER_MODEL = os.getenv("OUTPUT_PARSER_MODEL")
+IMAGE_MODEL = os.getenv("IMAGE_MODEL")
 
 OPENAI_API_KEY = os.getenv("API_KEY")
 BASE_URL = os.getenv("BASE_URL")  # e.g. https://turbo.torob.com/v1
@@ -125,8 +127,6 @@ parser_agent = Agent(
 
 usage_limits = UsageLimits(request_limit=30, tool_calls_limit=30, output_tokens_limit=4096)
 
-from typing import Tuple, Optional
-
 async def run_shopping_agent(
     input_dict: dict,
     use_initial_plan: bool = True,
@@ -169,11 +169,24 @@ async def run_shopping_agent(
         - Dictionary with error message in 'message' and None for key lists.
     """
     try:
-        # Step 0: Get text Message
+        # Step 0: Get text and image Message
         all_texts = [m["content"] for m in input_dict["messages"] if m["type"] == "text"]
         all_images = [m["content"] for m in input_dict["messages"] if m["type"] == "image"]
         instruction = all_texts[0] if all_texts else None
         user_image = all_images[0] if all_images else None
+
+        # If image request, then handle using image client
+        if user_image:
+            image_response = await run_image_agent(input_text = instruction,
+                                  image_b64 = user_image,
+                                  usage_limits = usage_limits)
+            print(image_response)
+            return ShoppingResponse(
+                            message=image_response['main_topic'],
+                            base_random_keys=None,
+                            member_random_keys=None,
+                            finished=True,
+                            )
 
         # Step 0.5: fetch chat history
         chat_id = input_dict["chat_id"]
@@ -208,12 +221,15 @@ async def run_shopping_agent(
 
         # Step 3: build prompt for shopping agent
         prompt = ""
+        # add history if exists
         if history_text:
             prompt += "Conversation history:\n" + history_text + "\n\n"
+        # If this is the fifth turn (end), alert the model
         if chat_index ==5:
             prompt += "[IMPORTANT] This is the Fifth turn. Your response is the end of conversation. You must answer the user now definitively.\n"
         prompt += "Input: " + preprocessed_instruction
 
+        # Add initial similarity optionally
         if similarity_text:
             prompt += "\n\nInitial Similarity Search Candidates:\n" + similarity_text
             prompt += "\n" + "The initial similarity search results are provided for convenience."
@@ -221,13 +237,15 @@ async def run_shopping_agent(
         # Step 4: optionally generate plan
         plan_output = None
         plan_text = ""
-        if use_initial_plan and (chat_index == 1 or chat_index == 5):
+        if use_initial_plan and (chat_index == 1 or chat_index == 5): # for the 1st and last turn
             plan_output = await cot_agent.run(prompt)
             plan_text = plan_output.output or ""
             print(plan_text)
+        # Add plan
         if plan_text:
             prompt += "\n\nPlan:\n" + plan_text
         
+        # Run main agent
         result = await shopping_agent.run(prompt, usage_limits=usage_limits)
 
         # Convert to dict for output formatting
@@ -235,7 +253,7 @@ async def run_shopping_agent(
 
         # Step 5: optionally normalize message
         message_out = result.output.message
-        if message_out and use_parser_output and result.output.finished:
+        if message_out and use_parser_output and result.output.finished: # onlt if the output is final
             preprocessed_output = preprocess_persian(message_out)
             parser_input = parser_prompt.format(
                 input_txt=preprocessed_instruction,
@@ -258,3 +276,69 @@ async def run_shopping_agent(
             finished=True,
         )
         return None, dict(error_response)
+
+
+image_client = OpenAIChatModel(
+    IMAGE_MODEL,
+    provider=OpenAIProvider(
+        base_url=BASE_URL,
+        api_key=OPENAI_API_KEY,
+        http_client=httpx.AsyncClient()
+    ),
+    settings=ModelSettings(temperature=0.0001, max_tokens=1024)
+)
+
+
+# --- Output Schema ---
+class ImageResponse(BaseModel):
+    description: Optional[str] = None
+    long_description: Optional[str] = None
+    candidates: Optional[List[str]] = None
+    main_topic: Optional[str] = None
+
+# --- Agent ---
+
+
+image_agent = Agent(
+    name="TorobImageAssistant",
+    model=image_client,
+    system_prompt=image_label_system_prompt,
+    output_type=ImageResponse,
+)
+
+
+# --- Runner function ---
+async def run_image_agent(
+    input_text: str,
+    image_b64: str,
+    usage_limits: Optional[Any] = None,
+) -> Tuple[Optional[ImageResponse], Dict[str, Any]]:
+    """
+    Run the image agent with message content (text + image_b64).
+    """
+    try:
+        # Compose message payload exactly like OpenAI API
+        message_content = [
+            {"type": "text", "text": input_text},
+            {"type": "image_url", "image_url": {"url": image_b64}},
+        ]
+
+        user_message = {"role": "user", "content": message_content}
+
+        if usage_limits:
+            result = await image_agent.run([user_message], usage_limits=usage_limits)
+        else:
+            result = await image_agent.run([user_message])
+
+        output_obj = result.output
+        return result, dict(output_obj)
+
+    except Exception as e:
+        error = {
+            "description": None,
+            "long_description": None,
+            "candidates": [],
+            "main_topic": None,
+            "message": f"-- ERROR: {str(e)}"
+        }
+        return None, error
