@@ -19,11 +19,11 @@ Requirements:
 
 import os
 from typing import List, Optional, Tuple, Dict, Any
-from pydantic import BaseModel, BinaryContent
+from pydantic import BaseModel
 import pickle
 from dotenv import load_dotenv
 import httpx
-from pydantic_ai import Agent, UsageLimits, ModelSettings
+from pydantic_ai import Agent, UsageLimits, ModelSettings, BinaryContent
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from sql.sql_agent import generate_sql_query
