@@ -19,7 +19,8 @@ Requirements:
 
 import os
 from typing import List, Optional, Tuple, Dict, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, BinaryContent
+import pickle
 from dotenv import load_dotenv
 import httpx
 from pydantic_ai import Agent, UsageLimits, ModelSettings
@@ -277,6 +278,33 @@ async def run_shopping_agent(
         )
         return None, dict(error_response)
 
+import base64
+from typing import Tuple
+
+def extract_media_type_and_bytes(data_uri: str) -> Tuple[str, bytes]:
+    """
+    Extracts the media type and image bytes from a base64 data URI.
+
+    Args:
+        data_uri: string like "data:image/jpeg;base64,<image-base64>"
+
+    Returns:
+        Tuple of (media_type, image_bytes)
+    """
+    if not data_uri.startswith("data:"):
+        raise ValueError("Invalid data URI format")
+
+    # Split header and base64 part
+    header, b64_data = data_uri.split(",", 1)
+
+    # Extract media type
+    # Example header: "data:image/jpeg;base64"
+    media_type = header.split(";")[0][5:]  # remove "data:"
+
+    # Decode base64 to bytes
+    image_bytes = base64.b64decode(b64_data)
+
+    return media_type, image_bytes
 
 image_client = OpenAIChatModel(
     IMAGE_MODEL,
@@ -299,10 +327,12 @@ class ImageResponse(BaseModel):
 # --- Agent ---
 
 import pickle
-with open("categories.pkl", "rb") as f:
-    loaded_titles = pickle.load(f)
+with open("categories_by_level.pkl", "rb") as f:
+    loaded_levels = pickle.load(f)
 
-labels_quotes = [f'"{x}"' for x in loaded_titles]
+# for lvl, cats in loaded_levels.items():
+#     print(f"Level {lvl}:", cats[:10], "...")  # show first 10 per level
+labels_quotes = [f"Level {lvl}: {cats}" "\n" for lvl,cats in loaded_levels.items()]
 
 
 image_agent = Agent(
@@ -324,17 +354,17 @@ async def run_image_agent(
     """
     try:
         # Compose message payload exactly like OpenAI API
-        message_content = [
-            {"type": "text", "text": input_text},
-            {"type": "image_url", "image_url": {"url": image_b64}},
-        ]
-
-        user_message = {"role": "user", "content": message_content}
+        media_type, image_bytes = extract_media_type_and_bytes(image_b64)
+        
+        user_message = [
+                input_text, 
+                BinaryContent(data=image_bytes, media_type=media_type),
+                        ]
 
         if usage_limits:
-            result = await image_agent.run([user_message], usage_limits=usage_limits)
+            result = await image_agent.run(user_message, usage_limits=usage_limits)
         else:
-            result = await image_agent.run([user_message])
+            result = await image_agent.run(user_message)
 
         output_obj = result.output
         return result, dict(output_obj)
