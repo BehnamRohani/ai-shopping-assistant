@@ -310,7 +310,7 @@ class TorobConversationAgent(TorobAgentBase):
                 + "\nBelow is structure of data in database:"
                 + schema_prompt
             ),
-            tools=["similarity_search", "execute_sql"],
+            tools=[similarity_search, execute_sql],
             output_type=ShoppingResponse,
         )
 
@@ -456,6 +456,8 @@ class TorobHybridAgent(TorobAgentBase):
                     image_b64=user_image,
                     usage_limits=usage_limits
                 )
+
+                print(dict(image_response))
 
                 final_dict = ShoppingResponse(
                     message=image_response.get('main_topic'),
