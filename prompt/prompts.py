@@ -107,13 +107,9 @@ You have access to the following tools:
    → Use this when retrieving product random_key(s) from user queries, even if the product name is slightly different.  
    → `top_k` controls how many candidates to retrieve; `probes` controls recall vs. speed.  
 
-2. generate_sql_query(instruction: str) -> tuple[str, str]: 
-   Generates a PostgreSQL query from natural language.
-   → Use for complex requests (aggregations, computations).  
-
 3. execute_sql(query: str) -> list[RealDictRow]: 
    Executes a PostgreSQL query and returns results.
-   → Run SQL directly (your own query or one produced by `generate_sql_query`).  
+   → Run SQL directly.
 """
 
 ### Rules:
@@ -167,8 +163,7 @@ rules_initial = """
 - For anything that requires **aggregation, computation, or statistics**  
   (lowest price, highest price, average, total stock, shop counts, sums, etc.),  
   either:  
-    • write the full SQL query yourself and run it with `execute_sql`, or  
-    • use `generate_sql_query` to create the SQL, then run it with `execute_sql`.  
+    • write the full SQL query yourself and run it with `execute_sql`
 - Use `similarity_search` to map user text → product random_key(s). 
 - For **conversation-initiating flows** and final complex seller-check queries:
     - Turn 1: Ask for up to 2–3 critical constraints (price, city, brand) before fetching candidates.
@@ -239,7 +234,7 @@ IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAX
          - Avoid vague questions or step-by-step single constraints. 
      • **Turn 5 (finalizing turn):**
          - MUST return exactly one `member_random_keys` (one random_key) and set `finished = True`.
-         - Generate and execute the final SQL to verify/select the seller. In this final query, **use `LIKE '%...%'` on Persian text fields** (e.g., `base_products.persian_name`, city) rather than `=`; if no exact match, **relax constraints** (widen price ±5%, allow lower score thresholds, etc.) and pick the closest valid shop.
+         - Generate and execute the final SQL to verify/select the seller.
          - Do not return "no results found" — pick the best candidate and finish.
      • While clarifying (turns 1–4) keep both `base_random_keys` and `member_random_keys` = NULL.
      • Use conversation history to improve suggestions.
@@ -248,8 +243,7 @@ IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAX
 - For anything that requires **aggregation, computation, or statistics**  
   (lowest price, highest price, average, total stock, shop counts, sums, etc.),  
   either:  
-    • write the full SQL query yourself and run it with `execute_sql`, or  
-    • use `generate_sql_query` to create the SQL, then run it with `execute_sql`.  
+    • write the full SQL query yourself and run it with `execute_sql` 
 - Use `similarity_search` to retrieve base_random_key and resolve product references from user text.
 - For the **conversation** flow:
     • Turn 1: Ask for up to 2–3 critical constraints (price, city, brand) before fetching candidates.

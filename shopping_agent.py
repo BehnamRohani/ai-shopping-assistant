@@ -105,7 +105,6 @@ shopping_agent = Agent(
                                         tools = tools_info, 
                                        rules = instructions_generated),
     tools=[similarity_search,
-           generate_sql_query,
            execute_sql,],
     output_type=ShoppingResponse,  # Pydantic handles validation/parsing automatically
 )
