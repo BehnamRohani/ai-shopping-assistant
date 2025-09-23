@@ -119,7 +119,7 @@ def insert_chat(input_dict: dict, output_dict: dict):
         "user_image_url": user_image_url,
         "chat_index": chat_index,
         "model_text": output_dict.get("message"),
-        "model_image_url": None,
+        "model_image_url": user_image_url,
         "base_random_keys": json.dumps(output_dict.get("base_random_keys")),
         "member_random_keys": json.dumps(output_dict.get("member_random_keys")),
         "finished": finished,
