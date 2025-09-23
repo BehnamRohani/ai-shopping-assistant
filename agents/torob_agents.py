@@ -481,6 +481,7 @@ class TorobHybridAgent(TorobAgentBase):
                 history_text = "\n".join(
                     [f"Input No.({(i+1)}): {h['message']}\nResponse No.({(i+1)}): {h['response']}" for i,h in enumerate(history)]
                 )
+                print(history_text)
                 scenario_label = 'CONVERSATION'
                 prompt += "Conversation history:\n" + history_text + "\n\n"
                 if chat_index ==5:
