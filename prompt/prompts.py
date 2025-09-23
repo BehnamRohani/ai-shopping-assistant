@@ -230,6 +230,7 @@ IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAX
          - Run a lightweight SQL query to **fetch up to 3 candidate members (sellers)**.  
            Include their information such as **shop_id, shop name, price, base product name, etc.** (`base_products.persian_name`).  
            Present these 3 as concrete seller suggestions to the user.  
+         • After each turn, you may concat resolved `shop_ids` from members table to message and check them with user => "Is `<shop_id>` good for you?".
          - Then, ask the user what is missing/wrong in those suggestions, and in the same turn also ask for **all high-value constraints together** (price range, city, warranty, brand, seller score, stock/variation, etc.).  
          - Avoid vague questions or step-by-step single constraints. 
      • **Turn 5 (finalizing turn):**
@@ -248,7 +249,7 @@ IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAX
 - For the **conversation** flow:
     • Turn 1: Ask for up to 2–3 critical constraints (price, city, brand) before fetching candidates.
     • In turns **2–4** you may run light SQL (see Conversation rules) to fetch candidate members as suggestions (use `LIMIT 3`).
-    • After each turns **2-4**, you may concat resolved shop_ids to message and check them with user.
+    • After each turns **2-4**, you may concat resolved shop_ids to `message` and check them with user.
     • Final (turn 5): run the definitive SQL using `LIKE '%...%'` for Persian name/city checks and apply progressive relaxation if needed.
 
 ### Special handling for extra_features:
