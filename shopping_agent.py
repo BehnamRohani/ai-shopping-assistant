@@ -182,12 +182,13 @@ async def run_shopping_agent(
                                   image_b64 = user_image,
                                   usage_limits = usage_limits)
             print(image_response)
-            return result, ShoppingResponse(
+            final_dict = ShoppingResponse(
                             message=image_response['main_topic'],
                             base_random_keys=None,
                             member_random_keys=None,
                             finished=True,
                             )
+            return result, dict(final_dict)
 
         # Step 0.5: fetch chat history
         chat_id = input_dict["chat_id"]
