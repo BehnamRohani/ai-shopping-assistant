@@ -128,7 +128,7 @@ rules_initial = """
      → ⚠️ **Important clarification**: If the user provides a detailed and specific product name (with brand, model, size, color, material, or code like "مدل 122"), lean to classifying it as a product base search — NOT as conversation initiation. 
      → Only treat vague or generic product requests (e.g., "یه لپ تاپ خوب می‌خوام", "میتونی کمک کنی؟") as conversation initiation.
    - Else if the user asks for a **property/attribute** of that product → resolve attribute.  
-   - Else if the user asks for **seller/shop-related info** (availability, price, stock, shops) → resolve via SQL.  
+   - Else if the user asks for **seller/shop-related info** (availability, price, members (عضو), shops) → resolve via SQL.  
    - Else if the user asks for **comparison of products** with respect to a specific feature/use-case → pick best base and justify.  
    - Only if the product request is **vague or incomplete** or **initating a conversation to find a suitable product and seller** → (interactive narrowing until a member_random_key can be determined)?
       • Clarification: Treat vague or generic product requests (e.g., "یه لپ تاپ خوب می‌خوام", "میتونی کمک کنی؟", "دنبال یه فروشنده خوب میگردم، میتونی که کمکم کنی؟") as conversation initiation.
@@ -206,7 +206,7 @@ IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAX
    → Fill message with the requested attribute.
    → IMPORTANT: Keep and return the **Original** term used in data for the value of property.
 
-3. User asks about shop/seller information (e.g., lowest price, number of shops, number of members, total stock, etc.)
+3. User asks about shop/seller information (e.g., lowest price (قیمت), number of shops, number of members (عضو ها), etc.)
    → Resolve product with similarity_search if needed.
    → Generate and execute the proper query to calculate.
    → The response must contain the result in a float-parsable format.  
