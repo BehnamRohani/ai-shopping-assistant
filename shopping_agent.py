@@ -173,7 +173,7 @@ async def run_shopping_agent(
         all_texts = [m["content"] for m in input_dict["messages"] if m["type"] == "text"]
         all_images = [m["content"] for m in input_dict["messages"] if m["type"] == "image"]
         instruction = all_texts[0] if all_texts else None
-        user_image_url = all_images[0] if all_images else None
+        user_image = all_images[0] if all_images else None
 
         # Step 0.5: fetch chat history
         chat_id = input_dict["chat_id"]
