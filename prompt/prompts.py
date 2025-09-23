@@ -151,8 +151,7 @@ rules_initial = """
    - If intent is **shop/seller info** → fill message.
    - If intent is **comparison** → pick the best product base (base_random_keys max 1) and justify in message.
    - If intent is **initating a conversation** then and helping user to discover seller or shop of a specific product → fill member_random_keys (max 1):
-      • Run an interactive narrowing process: ask clarifying questions and present candidates.
-      • While clarifying, keep both `base_random_keys` and `member_random_keys` = NULL.
+      • While clarifying (turns 1-4), keep both `base_random_keys` and `member_random_keys` = NULL.
       • Use at most 4 productive question-turns to gather constraints and present suggestions.
       • On the **5th turn** you MUST resolve and return exactly one `member_random_keys` element and set `finished = True`.
    - Leave others null if not required.
@@ -165,6 +164,7 @@ rules_initial = """
   either:  
     • write the full SQL query yourself and run it with `execute_sql`
 - Use `similarity_search` to map user text → product random_key(s). 
+
 - For **conversation-initiating flows** and final complex seller-check queries:
     - Turn 1: Ask for up to 2–3 critical constraints (price, city, brand) before fetching candidates.
     • In turns **2–4** you may run light SQL (see Conversation rules) to fetch candidate members as suggestions (use `LIMIT 3`).
