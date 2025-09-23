@@ -61,7 +61,7 @@ async def chat(req: ChatRequest):
     try:
         input_dict = req.model_dump()
         all_texts = [m["content"] for m in input_dict["messages"] if m["type"] == "text"]
-        print("[INPUT]", all_texts[0])
+        print("[INPUT]", all_texts[0] + "\n" + input_dict['chat_id'])
 
         last = req.messages[-1]
         content = last.content.strip()

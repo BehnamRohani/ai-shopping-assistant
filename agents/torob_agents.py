@@ -172,7 +172,7 @@ class TorobAgentBase:
             result = await self.agent.run(input_data, usage_limits=usage_limits)
         else:
             result = await self.agent.run(input_data)
-        return result, dict(result.output)
+        return result, result.output
 
 class TorobClassifierAgent(TorobAgentBase):
     def __init__(self):
@@ -472,8 +472,8 @@ class TorobHybridAgent(TorobAgentBase):
             # --- Step 2: Determine scenario ---
             if not history:
                 classifier_agent = TorobClassifierAgent()
-                class_results = await classifier_agent.run(instruction, usage_limits=usage_limits)
-                scenario_label = class_results.output
+                _, class_out = await classifier_agent.run(instruction, usage_limits=usage_limits)
+                scenario_label = class_out.output.classification
                 print(scenario_label)
                 scenario_agent = TorobScenarioAgent(scenario_label)
             else:
@@ -512,10 +512,10 @@ class TorobHybridAgent(TorobAgentBase):
 
             # --- Step 3: Run the chosen scenario agent ---
             few_shot = 0
-            result = await scenario_agent.run(prompt, usage_limits=usage_limits, few_shot=few_shot)
+            result, agent_response = await scenario_agent.run(prompt, usage_limits=usage_limits, few_shot=few_shot)
 
             # --- Step 4: Normalize output ---
-            output_dict = normalize_to_shopping_response(result.output)
+            output_dict = normalize_to_shopping_response(agent_response)
             if scenario_label not in ['CONVERSATION']:
                 output_dict['finished'] = True
             
