@@ -20,6 +20,7 @@ Requirements:
 import os
 from typing import List, Optional, Tuple, Dict, Any
 from pydantic import BaseModel
+import base64
 import pickle
 from dotenv import load_dotenv
 import httpx
@@ -28,7 +29,7 @@ from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from sql.sql_agent import generate_sql_query
 from sql.sql_utils import execute_sql
-from prompt.prompts import *
+from prompt.prompts_old import *
 from utils.utils import preprocess_persian
 from sql.similarity_search_db import similarity_search
 from sql.sql_utils import get_chat_history, get_base_id_and_index
@@ -277,9 +278,6 @@ async def run_shopping_agent(
             finished=True,
         )
         return None, dict(error_response)
-
-import base64
-from typing import Tuple
 
 def extract_media_type_and_bytes(data_uri: str) -> Tuple[str, bytes]:
     """

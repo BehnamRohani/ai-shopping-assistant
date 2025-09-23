@@ -1,20 +1,17 @@
 # app.py
 import os
 import re
-import json
-import random
-import string
-import psycopg2
-import psycopg2.extras
 from typing import List, Optional, Literal
 
 from fastapi import FastAPI, HTTPException
 from fastapi import Request
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from shopping_agent import run_shopping_agent
+from shopping_agent_old import run_shopping_agent
 from sql.similarity_search_db import similarity_search
 from sql.sql_utils import init_logs_table, insert_log, insert_chat, get_chat_history
+from agents.torob_agents import TorobHybridAgent
+from pydantic_ai import UsageLimits
 
 # Load environment variables
 load_dotenv()
@@ -53,6 +50,8 @@ class ChatResponse(BaseModel):
 # ------ Patterns ------
 RE_BASE = re.compile(r"return base random key:\s*([A-Za-z0-9\-_:]+)", re.IGNORECASE)
 RE_MEMBER = re.compile(r"return member random key:\s*([A-Za-z0-9\-_:]+)", re.IGNORECASE)
+
+usage_limits = UsageLimits(request_limit=30, tool_calls_limit=30, output_tokens_limit=4096)
 
 # ------ Endpoint ------
 @app.post("/chat", response_model=ChatResponse)
@@ -104,10 +103,15 @@ async def chat(req: ChatRequest):
             return resp
 
         # 4) shopping agent
-        result, output_dict = await run_shopping_agent(input_dict=input_dict, 
-                                                  use_initial_plan=True,
-                                                  use_parser_output=True,
-                                                  use_initial_similarity_search=True)
+        # result, output_dict = await run_shopping_agent(input_dict=input_dict, 
+        #                                           use_initial_plan=True,
+        #                                           use_parser_output=True,
+        #                                           use_initial_similarity_search=True)
+
+        myagent = TorobHybridAgent()
+        result, output_dict = await myagent.run(input_dict=input_dict,
+                                                usage_limits=usage_limits,
+                                                use_initial_similarity_search=True)
         insert_chat(input_dict, output_dict)
         print("[OUTPUT]", output_dict)
         # print(result.all_messages())
