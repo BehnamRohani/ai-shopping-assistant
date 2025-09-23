@@ -171,14 +171,10 @@ rules_initial = """
     • use `generate_sql_query` to create the SQL, then run it with `execute_sql`.  
 - Use `similarity_search` to map user text → product random_key(s). 
 - For **conversation-initiating flows** and final complex seller-check queries:
-    • In turns **1–4** you may run light SQL (see Conversation rules) to fetch candidate members as suggestions (use `LIMIT 3`).
+    - Turn 1: Ask for up to 2–3 critical constraints (price, city, brand) before fetching candidates.
+    • In turns **2–4** you may run light SQL (see Conversation rules) to fetch candidate members as suggestions (use `LIMIT 3`).
+    • After each turns **2-4**, you may concat resolved shop_ids to message and check them with user.
     • In the **final (5th) query** that verifies the seller/shop existence and selects the final `member_random_key`, **use `LIKE '%...%'`** on Persian text fields (e.g., `base_products.persian_name`, city) instead of `=`. This ensures broader coverage for partial/inexact Persian names.
-
-## This rule **ONLY** applies to **initating a conversation** where some general product names may appear in SQL.  
-   - ⚠️ When generating SQL queries that check or filter by product name (`persian_name`),  
-   **use `LIKE '%...%'` instead of `=`** when the name is general and not detailed.  
-   • Persian names in user input may be partial, vague, or slightly different from the database value.  
-   • Using `LIKE` in SQL ensures broader coverage.  
 
 ### Special handling for extra_features:
 - `extra_features` is stored as a TEXT column with JSON-like content.
@@ -240,7 +236,7 @@ IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAX
            Include their information such as **shop_id, shop name, price, base product name, etc.** (`base_products.persian_name`).  
            Present these 3 as concrete seller suggestions to the user.  
          - Then, ask the user what is missing/wrong in those suggestions, and in the same turn also ask for **all high-value constraints together** (price range, city, warranty, brand, seller score, stock/variation, etc.).  
-         - Avoid vague questions or step-by-step single constraints.  
+         - Avoid vague questions or step-by-step single constraints. 
      • **Turn 5 (finalizing turn):**
          - MUST return exactly one `member_random_keys` (one random_key) and set `finished = True`.
          - Generate and execute the final SQL to verify/select the seller. In this final query, **use `LIKE '%...%'` on Persian text fields** (e.g., `base_products.persian_name`, city) rather than `=`; if no exact match, **relax constraints** (widen price ±5%, allow lower score thresholds, etc.) and pick the closest valid shop.
@@ -256,14 +252,10 @@ IMPORTANT NOTE: `base_random_keys` and `member_random_keys` should have **AT MAX
     • use `generate_sql_query` to create the SQL, then run it with `execute_sql`.  
 - Use `similarity_search` to retrieve base_random_key and resolve product references from user text.
 - For the **conversation** flow:
-    • Runs in turns 1–4: lightweight SQL queries with `LIMIT 3` to fetch suggestions (you may use LIKE for broader matches).
+    • Turn 1: Ask for up to 2–3 critical constraints (price, city, brand) before fetching candidates.
+    • In turns **2–4** you may run light SQL (see Conversation rules) to fetch candidate members as suggestions (use `LIMIT 3`).
+    • After each turns **2-4**, you may concat resolved shop_ids to message and check them with user.
     • Final (turn 5): run the definitive SQL using `LIKE '%...%'` for Persian name/city checks and apply progressive relaxation if needed.
-
-## This rule **ONLY** applies to **initating a conversation** where some general product names may appear in SQL.  
-   - ⚠️ When generating SQL queries that check or filter by product name (`persian_name`),  
-   **use `LIKE '%...%'` and instead of `=`** when the name is general and not detailed.  
-   • Persian names in user input may be partial, vague, or slightly different from the database value.  
-   • Using `LIKE` in SQL ensures broader coverage.
 
 ### Special handling for extra_features:
 - `extra_features` is stored as a TEXT column with JSON-like content.
@@ -352,8 +344,9 @@ Your responsibilities:
       → Preserve at least 3 decimal places even if they are .000.  
          → Examples: "5.000", "12999.532", "42.700".  
       → Never drop or round away decimal precision.  
-   - DESCRIPTIVE_VALUE: user asks for general information, explanation, or descriptive details that are **not numeric** and **not a single feature value**. 
+   - DESCRIPTIVE_VALUE: user asks for general information, explanation, comparison of two products, or descriptive details that are **not numeric** and **not a single feature value**. 
      → In this case, the final message should remain untouched.
+     → Case of comparing two products has descriptive output.
 
 2. Based on the concluded response type, output only the final normalized message.
 
@@ -378,11 +371,6 @@ Example — NUMERIC_VALUE (FLOAT)
 User Input (message): "میانگین قیمت هودی مشتی هالک و اونجرز در فروشگاه چند است؟"
 Raw Assistant Output: "بیشترین قیمت براکت زیر هیدرولیک موزینگ ساید با اطلاعات داده شده برابر با 82940.7511248 است"
 Final Normalized Message: "82940.751"
-
-Example — NUMERIC_VALUE (Equivalent to non-existence of a product with that feature <=> "0")
-User Input (message): "در چند فروشگاه این لپ تاپ با گارانتی هست؟"
-Raw Assistant Output: "هر هیچ فروشگاه این لپ تاپ با گارانتی نیست."
-Final Normalized Message: "0"
 
 Example — NUMERIC_VALUE (Equivalent to non-existence of a product with that feature <=> "0")
 User Input (message): "در چند فروشگاه این نردبال ارسال به تمام کشور با ضمانت و رنگ قرمز به صورت نو وجود دارد؟"

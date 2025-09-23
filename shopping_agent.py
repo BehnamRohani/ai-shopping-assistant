@@ -255,7 +255,7 @@ async def run_shopping_agent(
 
         # Step 5: optionally normalize message
         message_out = result.output.message
-        if message_out and use_parser_output and result.output.finished: # onlt if the output is final
+        if message_out and use_parser_output and result.output.finished and (not history_text): # only if the output is final
             preprocessed_output = preprocess_persian(message_out)
             parser_input = parser_prompt.format(
                 input_txt=preprocessed_instruction,

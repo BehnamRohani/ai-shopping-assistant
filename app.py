@@ -59,7 +59,8 @@ RE_MEMBER = re.compile(r"return member random key:\s*([A-Za-z0-9\-_:]+)", re.IGN
 async def chat(req: ChatRequest):
     try:
         input_dict = req.model_dump()
-        print("[INPUT]", input_dict)
+        all_texts = [m["content"] for m in input_dict["messages"] if m["type"] == "text"]
+        print("[INPUT]", all_texts[0])
 
         last = req.messages[-1]
         content = last.content.strip()
@@ -103,12 +104,13 @@ async def chat(req: ChatRequest):
             return resp
 
         # 4) shopping agent
-        _, output_dict = await run_shopping_agent(input_dict=input_dict, 
+        result, output_dict = await run_shopping_agent(input_dict=input_dict, 
                                                   use_initial_plan=True,
                                                   use_parser_output=True,
                                                   use_initial_similarity_search=True)
         insert_chat(input_dict, output_dict)
         print("[OUTPUT]", output_dict)
+        print(result.all_messages())
         insert_log(input_dict, output_dict)
         # Remove `finished` from the output dict before returning
         output_dict.pop("finished", None)
