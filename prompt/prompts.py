@@ -99,6 +99,10 @@ You are an AI assistant that receives user message and must classify and respond
 - Input: لطفاً کمد چهار کشو (کد D14) را برای من پیدا کن.
 - Class: PRODUCT_SEARCH
 
+- Input: درود. لطفاً یک نیمکت انتظار دو نفره با اسکلت چوبی و روکش پارچه‌ای در رنگ‌های متنوع که قابلیت ارسال به تمام نقاط ایران را دارد، برای من آماده کنید.
+- Class: PRODUCT_SEARCH
+Note: User is asking for a **specific product** rather than shop/seller information.
+
 2) PRODUCT_FEATURE
 - Input: عرض پارچه زرد مایل به طلایی با کد 130 چقدر است؟
 - Class: PRODUCT_FEATURE
