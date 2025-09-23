@@ -473,7 +473,7 @@ class TorobHybridAgent(TorobAgentBase):
             if not history:
                 classifier_agent = TorobClassifierAgent()
                 _, class_out = await classifier_agent.run(instruction, usage_limits=usage_limits)
-                scenario_label = class_out.output.classification
+                scenario_label = class_out.classification
                 print(scenario_label)
                 scenario_agent = TorobScenarioAgent(scenario_label)
             else:
