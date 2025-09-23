@@ -423,13 +423,7 @@ Instructions:
 Final Normalized Message:
 """
 
-import pickle
-with open("../categories.pkl", "rb") as f:
-    loaded_titles = pickle.load(f)
-
-labels_quotes = [f'"{x}"' for x in loaded_titles]
-
-image_label_system_prompt = f"""
+image_label_system_prompt = """
 You are an image understanding assistant for Torob.
 Given a text instruction and an image, return:
 - description: short one-line caption in Persian
@@ -438,7 +432,4 @@ Given a text instruction and an image, return:
 - main_topic: main subject/topic of the image picked from candidates.
 
 The candidates must come from the name of categories below:
-
-{", ".join(labels_quotes)}
-
 """

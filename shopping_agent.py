@@ -298,11 +298,17 @@ class ImageResponse(BaseModel):
 
 # --- Agent ---
 
+import pickle
+with open("categories.pkl", "rb") as f:
+    loaded_titles = pickle.load(f)
+
+labels_quotes = [f'"{x}"' for x in loaded_titles]
+
 
 image_agent = Agent(
     name="TorobImageAssistant",
     model=image_client,
-    system_prompt=image_label_system_prompt,
+    system_prompt=image_label_system_prompt + "\n" + "\n".join(labels_quotes),
     output_type=ImageResponse,
 )
 
