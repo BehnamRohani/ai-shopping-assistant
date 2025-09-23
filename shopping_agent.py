@@ -178,11 +178,11 @@ async def run_shopping_agent(
 
         # If image request, then handle using image client
         if user_image:
-            image_response = await run_image_agent(input_text = instruction,
+            result, image_response = await run_image_agent(input_text = instruction,
                                   image_b64 = user_image,
                                   usage_limits = usage_limits)
             print(image_response)
-            return ShoppingResponse(
+            return result, ShoppingResponse(
                             message=image_response['main_topic'],
                             base_random_keys=None,
                             member_random_keys=None,
@@ -304,7 +304,7 @@ def extract_media_type_and_bytes(data_uri: str) -> Tuple[str, bytes]:
     # Decode base64 to bytes
     image_bytes = base64.b64decode(b64_data)
 
-    return media_type, image_bytes
+    return image_bytes, media_type
 
 image_client = OpenAIChatModel(
     IMAGE_MODEL,
@@ -354,7 +354,7 @@ async def run_image_agent(
     """
     try:
         # Compose message payload exactly like OpenAI API
-        media_type, image_bytes = extract_media_type_and_bytes(image_b64)
+        image_bytes, media_type = extract_media_type_and_bytes(image_b64)
         
         user_message = [
                 input_text, 
