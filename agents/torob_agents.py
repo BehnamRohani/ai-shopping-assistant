@@ -509,13 +509,13 @@ class TorobHybridAgent(TorobAgentBase):
             if similarity_text:
                 prompt += "\n\nInitial Similarity Search Candidates:\n" + similarity_text
                 prompt += "\n" + "The initial similarity search results are provided for convenience."
-
             # --- Step 3: Run the chosen scenario agent ---
             few_shot = 0
             result, agent_response = await scenario_agent.run(prompt, usage_limits=usage_limits, few_shot=few_shot)
 
             # --- Step 4: Normalize output ---
-            output_dict = normalize_to_shopping_response(agent_response)
+            output_shopping_response = normalize_to_shopping_response(agent_response)
+            output_dict = dict(output_shopping_response)
             if scenario_label not in ['CONVERSATION']:
                 output_dict['finished'] = True
             
