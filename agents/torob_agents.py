@@ -489,7 +489,7 @@ class TorobHybridAgent(TorobAgentBase):
 
             # Step 2: optionally run similarity search
             similarity_text = ""
-            if use_initial_similarity_search and (history_text==""):
+            if use_initial_similarity_search and (not history):
                 try:
                     candidates = similarity_search(preprocessed_instruction, top_k=5, probes=20)
                     if candidates[0][-1] > 0.7:
