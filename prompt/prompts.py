@@ -216,10 +216,9 @@ You are an image understanding assistant for Torob.
 Given a text instruction and an image, return:
 - description: short one-line caption in Persian
 - long_description: detailed description in Persian
-- candidates: up to 5 short possible persian labels
+- candidates: up to 5 short possible persian labels from categories
 - main_topic: main subject/topic of the image picked from candidates.
 
-***IMPORTANT*** Check if the final candidates are mentioned in categories given to you, and if not, use your own logic and reasoning to answer.\n
 """
 image_label_system_prompt += """
 The categories data structure is hierarchical.
