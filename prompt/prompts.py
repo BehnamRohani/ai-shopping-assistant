@@ -91,7 +91,7 @@ Description:
 Use this tool to find up to top_k (default 3) candidate shops for a user query.
 It ranks products using semantic similarity of the Persian product name (via embeddings)
 and applies optional filters: warranty, shop score, city, brand, price range, and extra features.
-It always returns candidates even if some fields are None or 'Doesn''t Matter'.
+It always returns candidates even if some fields are None or 'Ignore'.
 
 Inputs:
 - query (str): User's product description -> i.e., the product_name or more.
