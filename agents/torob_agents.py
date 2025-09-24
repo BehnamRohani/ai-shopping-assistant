@@ -369,16 +369,16 @@ import pickle
 class TorobImageClassifierAgent(TorobAgentBase):
     def __init__(self):
         # Load category labels from pickle
-        with open("categories_by_level.pkl", "rb") as f:
-            loaded_levels = pickle.load(f)
-        labels_quotes = [f"Level {lvl}: {cats}" "\n" for lvl, cats in loaded_levels.items()]
+        # with open("categories_by_level.pkl", "rb") as f:
+        #     loaded_levels = pickle.load(f)
+        # labels_quotes = [f"Level {lvl}: {cats}" "\n" for lvl, cats in loaded_levels.items()]
 
-        image_system_prompt = image_label_system_prompt + "\n" + "\n".join(labels_quotes)
+        # image_system_prompt = image_label_system_prompt + "\n" + "\n".join(labels_quotes)
 
         super().__init__(
-            name="TorobImageAgent",
+            name="TorobImageClassifierAgent",
             model_name=os.getenv("IMAGE_MODEL"),
-            system_prompt=image_system_prompt,
+            system_prompt=image_label_system_prompt,
             output_type=ImageResponse,
             tools=[similarity_search_cat],
         )
