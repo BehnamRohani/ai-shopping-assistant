@@ -9,7 +9,6 @@ import string
 from datetime import datetime, timedelta
 import json
 from dotenv import load_dotenv
-from agents.torob_agents import ExtraInfoConversation
 
 # Load environment variables
 load_dotenv()
@@ -148,31 +147,30 @@ def insert_chat(input_dict: dict, output_dict: dict, extra_info: dict = None):
     cur.close()
     conn.close()
 
-
-def load_extra_info(base_id: int, index_chat: int) -> Optional[ExtraInfoConversation]:
+def load_extra_info(base_id: int, index_chat: int) -> dict:
     """
-    Load chats.extra_info as a ExtraInfoConversation.
+    Load chats.extra_info directly as a dict.
+    Returns {} if no data exists.
     """
     conn = get_db_conn()
     cur = conn.cursor()
-    cur.execute(
-        """
-        SELECT extra_info
-        FROM chats
-        WHERE base_id = %s AND index_chat = %s
-        """,
-        (base_id, index_chat),
-    )
-    row = cur.fetchone()
-    if row and row[0]:
-        return (
-                ExtraInfoConversation.model_validate(row[0])
-                if isinstance(row[0], dict)
-                else ExtraInfoConversation.model_validate_json(row[0])
-            )
-    cur.close()
-    conn.close()
-    return ExtraInfoConversation()
+    try:
+        cur.execute(
+            """
+            SELECT extra_info
+            FROM chats
+            WHERE base_id = %s AND index_chat = %s
+            """,
+            (base_id, index_chat),
+        )
+        row = cur.fetchone()
+        if row and row[0]:
+            # row[0] could already be a dict (psycopg2.extras.RealDictCursor)
+            return row[0] if isinstance(row[0], dict) else json.loads(row[0])
+        return {}
+    finally:
+        cur.close()
+        conn.close()
 
 def get_chat_history(base_id: str) -> list[dict]:
     """

@@ -525,7 +525,6 @@ class TorobHybridAgent(TorobAgentBase):
             history = get_chat_history(base_id)[-4:]
 
             extra_info = load_extra_info(base_id, chat_index)
-            extra_info = dict(extra_info)
 
             print(extra_info)
 
