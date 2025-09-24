@@ -1,3 +1,6 @@
+import os, sys
+from typing import Optional
+sys.path.append(os.path.abspath(".."))
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import os, re
@@ -6,6 +9,7 @@ import string
 from datetime import datetime, timedelta
 import json
 from dotenv import load_dotenv
+from agents.torob_agents import ExtraInfoConversation
 
 # Load environment variables
 load_dotenv()
@@ -143,6 +147,32 @@ def insert_chat(input_dict: dict, output_dict: dict, extra_info: dict = None):
     conn.commit()
     cur.close()
     conn.close()
+
+
+def load_extra_info(base_id: int, index_chat: int) -> Optional[ExtraInfoConversation]:
+    """
+    Load chats.extra_info as a ExtraInfoConversation.
+    """
+    conn = get_db_conn()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        SELECT extra_info
+        FROM chats
+        WHERE base_id = %s AND index_chat = %s
+        """,
+        (base_id, index_chat),
+    )
+    row = cur.fetchone()
+    if row and row[0]:
+        return (
+                ExtraInfoConversation.model_validate(row[0])
+                if isinstance(row[0], dict)
+                else ExtraInfoConversation.model_validate_json(row[0])
+            )
+    cur.close()
+    conn.close()
+    return ExtraInfoConversation()
 
 def get_chat_history(base_id: str) -> list[dict]:
     """

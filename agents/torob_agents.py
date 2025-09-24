@@ -13,6 +13,7 @@ from sql.similarity_search_db import similarity_search
 from sql.sql_utils import execute_sql
 from sql.sql_utils import get_chat_history, get_base_id_and_index
 from utils.utils import preprocess_persian
+from sql.sql_utils import load_extra_info
 
 # ------------------------
 # Load environment
@@ -665,26 +666,3 @@ def normalize_to_shopping_response(output_obj: BaseModel) -> ShoppingResponse:
                     }
         final_response['extra_info'] = extra_info
     return final_response
-
-
-def load_extra_info(conn, base_id: int, index_chat: int) -> Optional[ExtraInfoConversation]:
-    """
-    Load chats.extra_info as a ExtraInfoConversation.
-    """
-    with conn.cursor() as cur:
-        cur.execute(
-            """
-            SELECT extra_info
-            FROM chats
-            WHERE base_id = %s AND index_chat = %s
-            """,
-            (base_id, index_chat),
-        )
-        row = cur.fetchone()
-        if row and row[0]:
-            return (
-                    ExtraInfoConversation.model_validate(row[0])
-                    if isinstance(row[0], dict)
-                    else ExtraInfoConversation.model_validate_json(row[0])
-                )
-    return ExtraInfoConversation()
