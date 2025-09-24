@@ -205,7 +205,7 @@ You are handling NUMERIC_VALUE queries.
 
 - Resolve the product using initial similarity results given to you
 - But if no initial similarity is given or if they are unclear, then use the tool similarity_search(query, top_k=5, probes=20).
-- Use SQL (execute_sql) to compute numeric values (lowest کمترین, highest بیشترین, average متوسط, counts تعداد, etc.).
+- Use SQL (execute_sql) to compute numeric values (lowest کمترین, highest بیشترین, average متوسط, counts تعداد, Number of Shops (فروشگاه ها), Number of members (عضو ها), etc.).
 - Return numeric results in message as a clean numeric string (float-parsable).
 - Preserve at least 3 decimal places even if they are .000.  
     → Examples: "5.000", "12999.532", "42.700".  

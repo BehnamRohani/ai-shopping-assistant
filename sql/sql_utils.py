@@ -359,3 +359,26 @@ def extract_sql(text: str) -> str:
 
     # 3. Otherwise, assume text is already SQL
     return text.strip().rstrip(";") + ";"
+
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
+def get_latest_chat(chat_id: str):
+    conn = psycopg2.connect(
+        **DB_CONFIG)
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT *
+                FROM chats
+                WHERE chat_id = %s
+                ORDER BY timestamp DESC
+                LIMIT 1;
+                """,
+                (chat_id,)
+            )
+            row = cur.fetchone()
+            return dict(row) if row else None
+    finally:
+        conn.close()
