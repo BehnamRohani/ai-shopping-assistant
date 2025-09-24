@@ -166,7 +166,7 @@ def find_candidate_shops(
         "limit": top_k,
     }
 
-    for k,v in params:
+    for k,v in params.items():
         if v in ['Ignore']:
             params[k] = None
 
