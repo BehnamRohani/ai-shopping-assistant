@@ -355,7 +355,7 @@ Given a text instruction and an image, return:
 - description: short one-line caption in Persian
 - long_description: detailed description in Persian
 - candidates: up to 5 short possible persian labels from categories
-- main_topic: main subject/topic of the image picked from candidates.
+- main_topic: main subject/topic of the image
    -> IMPORTANT: Should always be picked from Categories Level 3, Level 4, Level 5, or Level 6.
 
 - Here are examples mapping descriptions -> main_topic:
