@@ -530,7 +530,7 @@ class TorobHybridAgent(TorobAgentBase):
             
             if scenario_label in ['CONVERSATION']:
                 extra_info_text = "\n".join([f"{k} = {v}" for k,v in  extra_info.items()])
-                prompt += "Current Parameters:" + "\n\n"  + extra_info_text + "\n\n"
+                prompt += "Previous Parameters:" + "\n\n"  + extra_info_text + "\n\n"
 
             scenario_agent = TorobScenarioAgent(scenario_label)
             # Step 1: preprocess input
@@ -556,7 +556,7 @@ class TorobHybridAgent(TorobAgentBase):
                 prompt += "\n" + "The initial similarity search results are provided for convenience.\n"
 
             # Step 3: build prompt for shopping agent
-            prompt += "Input: " + preprocessed_instruction
+            prompt += "Current Input: " + preprocessed_instruction
 
             # --- Step 3: Run the chosen scenario agent ---
             few_shot = 0
@@ -564,8 +564,6 @@ class TorobHybridAgent(TorobAgentBase):
 
             # --- Step 4: Normalize output ---
             output_dict = normalize_to_shopping_response(agent_response)
-            if scenario_label not in ['CONVERSATION']:
-                output_dict['finished'] = True
             
             return result, output_dict
 
@@ -617,10 +615,12 @@ def normalize_to_shopping_response(output_obj: BaseModel) -> ShoppingResponse:
             finished=True
         )
     elif isinstance(output_obj, ConversationResponse):
+        finished = output_obj.finished
+        members_keys = output_obj.member_random_keys if finished else None
         final_response = ShoppingResponse(
             message=output_obj.message,
             base_random_keys=None,
-            member_random_keys=output_obj.member_random_keys,
+            member_random_keys=members_keys,
             finished=output_obj.finished  # optional, default True
         )
 

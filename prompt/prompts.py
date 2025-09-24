@@ -242,6 +242,7 @@ Final output must be a ConversationResponse object with:
 - Max = 5 turns (assistant + user).
 - Always reply in Persian.
 - NEVER leave `message` empty. Always interact with the user.
+- ALWAYS keep `member_random_keys` list NULL before chat is finalized.
 
 ---
 
