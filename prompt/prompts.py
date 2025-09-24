@@ -356,7 +356,7 @@ Given a text instruction and an image, return:
 - long_description: detailed description in Persian
 - candidates: up to 5 short possible persian labels from categories
 - main_topic: main subject/topic of the image picked from candidates.
-   -> IMPORTANT: Should always be picked from Categories Level 3, 4, or 5.
+   -> IMPORTANT: Should always be picked from Categories Level 3, Level 4, Level 5, or Level 6.
 
 - Here are examples mapping descriptions -> main_topic:
 
@@ -393,13 +393,13 @@ Example 5:
 """
 image_label_system_prompt += """
 The categories data structure is hierarchical.
-- Level 1 -> Level 2 -> **Level 3** -> **Level 4** -> **Level 5** -> Level 6
+- Level 1 -> Level 2 -> **Level 3** -> **Level 4** -> **Level 5** -> **Level 6** -> Level 7
 - Start by considering root categories (Level 1) and select the ones that are most semantically similar to the description of the image.
-- If a root category is chosen, explore its children (Level 2) and continue deeper only if necessary to provide more accurate and specific candidates.
+- If a root category is chosen, explore its children (Level 2) and continue deeper to provide more accurate and specific candidates.
 - Repeat this process down the hierarchy, stopping when the selected categories fully capture the main content of the image. 
 - Always pick candidates that are **most relevant and sufficient** based on the image description.
 - Avoid selecting unrelated topics, and prioritize specificity over including too many general topics.
-- main_topic should be picked from Levels 3-5.
+- main_topic should be picked from Levels 3-6.
 
 Categories:
 """
