@@ -33,6 +33,7 @@ def create_member_total_view():
                     bp.extra_features,
                     m.shop_id,
                     m.price,
+                    m.random_key AS member_random_key,
                     s.score,
                     s.has_warranty,
                     b.title AS brand_title,
@@ -131,6 +132,7 @@ def find_candidate_shops(
                 LIMIT 1000   -- fetch top 1000 first, not all
             )
         SELECT 
+            mt.
             mt.persian_name AS product_name,
             mt.shop_id,
             mt.price,
@@ -139,6 +141,7 @@ def find_candidate_shops(
             mt.score,
             mt.extra_features,
             mt.base_random_key,
+            mt.member_random_key,
             rp.similarity
         FROM ranked_products rp
         JOIN member_total mt ON rp.random_key = mt.base_random_key

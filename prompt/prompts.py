@@ -113,6 +113,7 @@ Outputs:
     - score (int)
     - extra_features (str)
     - base_random_key (str)
+    - member_random_key (str)
     - similarity (float): embedding similarity to the query
 """
 
@@ -274,9 +275,9 @@ Final output must be a ConversationResponse object with:
      • has_warranty, score, city_name, brand_title, price_min and prince_max from price range, product_name, product_features  
      • Let price_min and prince_max be equal if user gives approximate single price (e.g. "یک کالا با قیمت نزدیک 1000000").
    - The tool will return up to 3 candidates ranked by relevance / embedding similarity.  
-   - For each candidate, show **at least** these details in Persian:  
+   - For each candidate, show **at least** these details in Persian to user:  
      • نام محصول (persian_name)  
-     • شناسه فروشنده (shop_id)  
+     • شناسه فروشنده (shop_id)
      • قیمت (price, allowing ±5% for flexibility)  
      • شهر (city)  
      • وضعیت گارانتی (has_warranty)  
