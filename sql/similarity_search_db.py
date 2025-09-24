@@ -97,6 +97,36 @@ def similarity_search(query, top_k: int = 5, probes: int = 20):
 
     return results
 
+def similarity_search_cat(query, top_k: int = 5):
+    """
+    Perform a similarity search in the categories table using pgvector.
+
+    Args:
+        query (str): The query text.
+        top_k (int): Number of similar items to return.
+
+    Returns:
+        title
+    """
+    query_vector = get_embedding(query)  # list[float]
+    query_vector_str = "[" + ",".join(map(str, query_vector)) + "]"
+
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            # Force use of IVFFlat index
+            cur.execute("SET enable_seqscan = on;")
+
+            cur.execute("""
+                SELECT title,
+                       1 - (embedding <=> %s) AS similarity
+                FROM categories
+                ORDER BY embedding <=> %s
+                LIMIT %s
+            """, (query_vector_str, query_vector_str, top_k))
+            results = cur.fetchall()
+
+    return results
+
 def find_candidate_shops(
     query: str,
     top_k: int = 3,

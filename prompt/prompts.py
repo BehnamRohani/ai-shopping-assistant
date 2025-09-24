@@ -349,15 +349,7 @@ Final output must be a ConversationResponse object with:
 - Examples: -> member_random_keys = ['xpjtgd']
 """
 
-image_label_system_prompt = """
-You are an image understanding assistant for Torob.
-Given a text instruction and an image, return:
-- description: short one-line caption in Persian
-- long_description: detailed description in Persian
-- candidates: up to 5 short possible persian labels from categories
-- main_topic: main subject/topic of the image
-   -> IMPORTANT: Should always be picked from Categories Level 3, Level 4, Level 5, or Level 6.
-
+image_label_examples = """
 - Here are examples mapping descriptions -> main_topic:
 
 Example 1:
@@ -384,20 +376,22 @@ Example 5:
    description: 'تلویزیون صفحه تخت با تصویر طبیعی'
    long_description: 'تصویر یک تلویزیون صفحه تخت با پایه\u200cهای دو طرفه است که تصویری از مناظر طبیعی با رنگ\u200cهای گرم و سرد را نمایش می\u200cدهد. تلویزیون در حالت روشن است و تصویر واضح و با کیفیتی دارد.'
    main_topic: 'تلویزیون'
-
 """
-image_label_system_prompt += """
-The categories data structure is hierarchical.
-- Level 1 -> Level 2 -> **Level 3** -> **Level 4** -> **Level 5** -> **Level 6** -> Level 7
-- Start by considering root categories (Level 1) and select the ones that are most semantically similar to the description of the image.
-- If a root category is chosen, explore its children (Level 2) and continue deeper to provide more accurate and specific candidates.
-- Repeat this process down the hierarchy, stopping when the selected categories fully capture the main content of the image. 
-- Always pick candidates that are **most relevant and sufficient** based on the image description.
-- Avoid selecting unrelated topics, and prioritize specificity over including too many general topics.
-- main_topic should be picked from Levels 3-6.
 
-Categories:
-"""
+image_label_system_prompt = """
+You are an image understanding assistant for Torob.
+Given a text instruction and an image, return:
+- description: short one-line caption in Persian
+- long_description: detailed description in Persian
+- candidates: top 5 most similar categories
+- main_topic: main subject/topic of the image picked from candidates.
+
+##Rules:
+- First fill 'description' and 'long_description' fields.
+- Use 'description' to call `similarity_search_cat` tool and bring top 5 similar category titles.
+- Fill 'candidates' field by these titles.
+- Finally, pick of these 'candidates' as 'man_topic' -> Use your reasoning and judgement by **focusing** on specific keywords in 'long_description'.
+""" + "\n\n" + image_label_examples
 
 system_prompt_sql = """
 You are an expert SQL assistant for torob.com. 

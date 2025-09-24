@@ -9,7 +9,7 @@ from pydantic_ai import Agent, ModelSettings, UsageLimits
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from prompt.prompts import *
-from sql.similarity_search_db import similarity_search, find_candidate_shops
+from sql.similarity_search_db import similarity_search, find_candidate_shops, similarity_search_cat
 from sql.sql_utils import execute_sql
 from sql.sql_utils import get_chat_history, get_base_id_and_index
 from utils.utils import preprocess_persian
@@ -366,7 +366,7 @@ import base64
 from pydantic_ai import BinaryContent
 import pickle
 
-class TorobImageAgent(TorobAgentBase):
+class TorobImageClassifierAgent(TorobAgentBase):
     def __init__(self):
         # Load category labels from pickle
         with open("categories_by_level.pkl", "rb") as f:
@@ -380,6 +380,7 @@ class TorobImageAgent(TorobAgentBase):
             model_name=os.getenv("IMAGE_MODEL"),
             system_prompt=image_system_prompt,
             output_type=ImageResponse,
+            tools=[similarity_search_cat],
         )
 
     async def run(
@@ -455,7 +456,7 @@ class TorobScenarioAgent(TorobAgentBase):
         elif scenario_upper == "CONVERSATION":
             agent = TorobConversationAgent()
         elif scenario_upper == "IMAGE_TOPIC":
-            agent = TorobImageAgent()
+            agent = TorobImageClassifierAgent()
 
         # Copy attributes from the selected agent
         self.__dict__.update(agent.__dict__)
@@ -474,7 +475,7 @@ class TorobHybridAgent(TorobAgentBase):
         )
 
         # Initialize specialized agents
-        self.image_agent = TorobImageAgent()
+        self.image_agent = TorobImageClassifierAgent()
 
     async def run(self, input_dict: dict, usage_limits: Optional[Any] = None, 
                   use_initial_similarity_search: bool = True):
