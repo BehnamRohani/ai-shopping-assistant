@@ -113,9 +113,9 @@ async def chat(req: ChatRequest):
         result, output_dict = await myagent.run(input_dict=input_dict,
                                                 usage_limits=usage_limits,
                                                 use_initial_similarity_search=True)
+        print("[OUTPUT]", output_dict)
         extra_info = output_dict.pop("extra_info", None)  # remove from output_dict
         insert_chat(input_dict, output_dict, extra_info=extra_info)
-        print("[OUTPUT]", output_dict)
         # print(result.all_messages())
         insert_log(input_dict, output_dict)
         # Remove `finished` from the output dict before returning

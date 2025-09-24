@@ -84,6 +84,37 @@ execute_sql(query: str) -> list[RealDictRow]:
    → Run SQL directly.
 """
 
+find_candidate_shops_tool = """
+Tool Name: find_candidate_shops
+
+Description:
+Use this tool to find up to top_k (default 3) candidate shops for a user query.
+It ranks products using semantic similarity of the Persian product name (via embeddings)
+and applies optional filters: warranty, shop score, city, brand, price range, and extra features.
+It always returns candidates even if some fields are None or 'Doesn''t Matter'.
+
+Inputs:
+- query (str): User's product description -> i.e., the product_name or more.
+- has_warranty (bool or None): If user wants warranty. None or 'Doesn''t Matter' = ignore.
+- score (int or None): Minimum shop score. None or 'Doesn''t Matter' = ignore.
+- city_name (str or None): Desired city. None or 'Doesn''t Matter' = ignore.
+- brand_title (str or None): Desired brand. None or 'Doesn''t Matter' = ignore.
+- price_range (tuple[int,int] or None): Min and max price. None = ignore.
+- top_k (int, default 3): Maximum number of candidate shops to return.
+
+Outputs:
+- List of dictionaries, each containing:
+    - product_name (str)
+    - shop_id (int)
+    - price (int)
+    - city (str)
+    - has_warranty (bool)
+    - score (int)
+    - extra_features (str)
+    - base_random_key (str)
+    - similarity (float): embedding similarity to the query
+"""
+
 input_classification_sys_prompt = """
 You are an AI assistant that receives user message and must classify and respond according to five scenarios. Each scenario maps to one of the following classes:
 
@@ -236,16 +267,23 @@ Final output must be a ConversationResponse object with:
      «آیا محصول حتما باید گارانتی داشته باشد؟ حداقل چه امتیازی برای فروشنده مدنظرتان است؟ از چه شهری مایلید خرید کنید؟ برند خاصی مدنظرتان هست؟ رنج قیمتی مدنظرتان چقدر است؟ دقیق‌تر می‌فرمایید چه محصولی یا چه دسته‌ای مدنظرتان است؟»  
 
 3. **Candidate suggestion — MANDATORY**:  
-   - Even if fields are missing, you MUST propose up to 3 shop candidates (`LIMIT 3`) every turn.  
-   - For each candidate, show AT LEAST these details in Persian:  
+   - Even if some fields are missing, you MUST propose up to 3 shop candidates (`LIMIT 3`) every turn.  
+   - To get candidates, **run the `find_candidate_shops` tool/function**:  
+     • query: user’s product description
+     • has_warranty, score, city_name, brand_title, price_range, product_name, product_features  
+   - The tool will return up to 3 candidates ranked by relevance / embedding similarity.  
+   - For each candidate, show **at least** these details in Persian:  
      • نام محصول (persian_name)  
      • شناسه فروشنده (shop_id)  
-     • قیمت (price)  
+     • قیمت (price, allowing ±5% for flexibility)  
      • شهر (city)  
      • وضعیت گارانتی (has_warranty)  
      • امتیاز فروشنده (score)  
      • ویژگی‌ها (extra_features if available)  
-   - Explicitly ask the user: «آیا یکی از این فروشندگان مناسب شماست یا مایلید اطلاعات بیشتری بدهید؟»  
+   - Explicitly ask the user:  
+     «آیا یکی از این فروشندگان مناسب شماست یا مایلید اطلاعات بیشتری بدهید؟»  
+   - Always set `shop_id` to the first/best candidate returned by `find_candidate_shops` and confirm with the user.
+
 
 4. **shop_id**:  
    - Always set `shop_id` to the first/best candidate.  
@@ -256,7 +294,7 @@ Final output must be a ConversationResponse object with:
 ### Turn 5 (Finalization)
 - MUST output exactly one `member_random_keys` (single element).  
 - Generate and execute a final SQL query with all constraints.  
-- Select best candidate and set its `member_random_keys`.  
+- Select best candidate and resolve its `member_random_keys`.  
 ---
 
 ### Important

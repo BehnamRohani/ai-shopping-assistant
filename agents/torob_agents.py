@@ -9,7 +9,7 @@ from pydantic_ai import Agent, ModelSettings, UsageLimits
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from prompt.prompts import *
-from sql.similarity_search_db import similarity_search
+from sql.similarity_search_db import similarity_search, find_candidate_shops
 from sql.sql_utils import execute_sql
 from sql.sql_utils import get_chat_history, get_base_id_and_index
 from utils.utils import preprocess_persian
@@ -342,11 +342,13 @@ class TorobConversationAgent(TorobAgentBase):
                 + SQL_NOTES
                 + "\nYou have access to the following tools:"
                 + "\n"
-                + similarity_search_tool + "\n" + execute_query_tool
+                + find_candidate_shops_tool + "\n" + 
+                similarity_search_tool + "\n" + execute_query_tool
                 + "\nBelow is structure of data in database:"
                 + schema_prompt
             ),
-            tools=[similarity_search, execute_sql],
+            tools=[find_candidate_shops,
+                   similarity_search, execute_sql],
             output_type=ConversationResponse,
         )
 
@@ -530,8 +532,6 @@ class TorobHybridAgent(TorobAgentBase):
                 extra_info_text = "\n".join([f"{k} = {v}" for k,v in  extra_info.items()])
                 prompt += "Current Parameters:" + "\n\n"  + extra_info_text + "\n\n"
 
-                print(extra_info_text)
-
             scenario_agent = TorobScenarioAgent(scenario_label)
             # Step 1: preprocess input
             preprocessed_instruction = preprocess_persian(instruction)
@@ -567,8 +567,6 @@ class TorobHybridAgent(TorobAgentBase):
             if scenario_label not in ['CONVERSATION']:
                 output_dict['finished'] = True
             
-            print(output_dict)
-
             return result, output_dict
 
         except Exception as e:
