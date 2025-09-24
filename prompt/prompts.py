@@ -95,10 +95,10 @@ It always returns candidates even if some fields are None or 'Doesn''t Matter'.
 
 Inputs:
 - query (str): User's product description -> i.e., the product_name or more.
-- has_warranty (bool or None): If user wants warranty. None or 'Doesn''t Matter' = ignore.
-- score (int or None): Minimum shop score. None or 'Doesn''t Matter' = ignore.
-- city_name (str or None): Desired city. None or 'Doesn''t Matter' = ignore.
-- brand_title (str or None): Desired brand. None or 'Doesn''t Matter' = ignore.
+- has_warranty (bool or None): If user wants warranty. None or 'Ignore' = ignore.
+- score (int or None): Minimum shop score. None or 'Ignore' = ignore.
+- city_name (str or None): Desired city. None or 'Ignore' = ignore.
+- brand_title (str or None): Desired brand. None or 'Ignore' = ignore.
 - price_min (int or None): Min price. None = ignore.
 - price_max (int or None): Max price. None = ignore.
 - top_k (int, default 3): Maximum number of candidate shops to return.
@@ -251,7 +251,7 @@ Final output must be a ConversationResponse object with:
 
 ### Parameter Handling
 - **None** = not set yet → MUST ask the user.  
-- **"Doesn't Matter"** = user explicitly said it doesn’t matter → do not ask again.  
+- **"Ignore"** = user explicitly said it doesn’t matter → do not ask again.  
 - **Price range** = treat flexibly. Use user’s range, or if a single price given, allow ±5%.  
 - **Not changeable**: has_warranty, score, city_name, brand_title, price_range (once set, do not override).  
 - **Updateable**: product_name (can evolve), product_features (appendable), shop_id (can change).  

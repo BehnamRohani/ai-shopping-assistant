@@ -163,6 +163,10 @@ def find_candidate_shops(
         "limit": top_k,
     }
 
+    for k,v in params:
+        if v in ['Ignore']:
+            params[k] = None
+
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
             cur.execute(sql, params)
