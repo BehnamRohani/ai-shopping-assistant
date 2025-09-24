@@ -229,7 +229,7 @@ Goal: Identify both the correct product base and the specific shop (member) the 
 Final output must be a ConversationResponse object with:
 - message: reply to the user in Persian (MUST always be non-null)
 - member_random_keys (list[str] | null): random_key(s) of shops/sellers (max 1)
-   - At most one element, or None if not finalized
+   - At most one element, or **None if not finalized**
    - Must be resolved from 'random_key' column of 'members' table.
 - finished: Indicates whether the assistant’s answer is definitive and complete.
     - True means the model is that the output is final.
@@ -296,8 +296,10 @@ Final output must be a ConversationResponse object with:
    - If you are confient you have the answer, then you may finalize in earlier turns (2-4)
    - MUST output exactly one `member_random_keys` (single element).
    - Resolve `member_random_keys` from random_key column of members table.
+   - In order to do this, you can either:
+      - Run `find_candidate_shops`, member_random_key would also be returned.
+      - or generate the proper query and use `execute_sql` tool on a final SQL query with all constraints. 
    - Set 'finished' to True.
-
 
 4. **shop_id**:  
    - Always set `shop_id` to the first/best candidate.  
@@ -315,6 +317,7 @@ Final output must be a ConversationResponse object with:
 ---
 
 ### Important
+- Always keep member_random_keys NULL unless the conversation is finalized (either in turn 5 or earlier).
 - Always suggest candidates AND ask for missing fields in the SAME message.  
 - Always include full candidate details (not just price/warranty).  
 - Always fill `shop_id` with at least one candidate.  
