@@ -635,7 +635,7 @@ def normalize_to_shopping_response(output_obj: BaseModel) -> ShoppingResponse:
             finished=True
         )
     final_response = dict(final_response)
-    if isinstance(output_obj, ClassificationResponse):
+    if isinstance(output_obj, ConversationResponse):
         extra_info={
                     "has_warranty": output_obj.has_warranty,
                     "score": output_obj.score,
