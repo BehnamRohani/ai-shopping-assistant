@@ -125,10 +125,10 @@ def find_candidate_shops(
 
     sql = """
         WITH ranked_products AS (
-                SELECT random_key, 1 - (embedding <=> %s::vector) AS similarity
+                SELECT random_key, 1 - (embedding <=> %(query_vector)s::vector) AS similarity
                 FROM product_embed
-                ORDER BY embedding <=> %s::vector
-                LIMIT 1000   -- fetch top 200 first, not all
+                ORDER BY embedding <=> %(query_vector)s::vector
+                LIMIT 1000   -- fetch top 1000 first, not all
             )
         SELECT 
             mt.persian_name AS product_name,
