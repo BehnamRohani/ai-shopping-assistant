@@ -528,11 +528,6 @@ class TorobHybridAgent(TorobAgentBase):
 
             print(extra_info)
 
-            # Add extra info by now
-            if scenario_label in ['CONVERSATION']:
-                prompt += "Current Parameters:" + "\n\n"  + str(extra_info) + "\n\n"
-
-
             # --- Step 2: Determine scenario ---
             if not history:
                 classifier_agent = TorobClassifierAgent()
@@ -548,7 +543,11 @@ class TorobHybridAgent(TorobAgentBase):
                 prompt += "Conversation history:\n" + history_text + "\n\n"
                 if chat_index ==5:
                     prompt += "[IMPORTANT] This is the Fifth turn. Your response is the end of conversation. You must answer the user now definitively.\n"
+                        # Add extra info by now
             
+            if scenario_label in ['CONVERSATION']:
+                prompt += "Current Parameters:" + "\n\n"  + str(extra_info) + "\n\n"
+
             scenario_agent = TorobScenarioAgent(scenario_label)
             # Step 1: preprocess input
             preprocessed_instruction = preprocess_persian(instruction)
