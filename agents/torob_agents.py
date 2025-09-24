@@ -349,23 +349,6 @@ class TorobConversationAgent(TorobAgentBase):
             tools=[similarity_search, execute_sql],
             output_type=ConversationResponse,
         )
-    async def run(
-        self,
-        input_data: Any,
-        usage_limits: Optional[UsageLimits] = None,
-        few_shot: int = 0    # NEW
-    ):
-        dict_input = dict(input_data)
-        # Prepend few-shot examples if requested
-        if few_shot > 0 and self.examples:
-            selected_examples = self.examples[:few_shot]
-            input_data =  str(dict_input) + "\n\n Here are some examples:\n\n" + "\n\n".join(selected_examples)
-
-        if usage_limits:
-            result = await self.agent.run(dict_input, usage_limits=usage_limits)
-        else:
-            result = await self.agent.run(dict_input)
-        return result, result.output
 
 # ------------------------
 # Torob Image Agent
@@ -567,7 +550,7 @@ class TorobHybridAgent(TorobAgentBase):
                         print("Similarity search results:\n", similarity_text)
                 except Exception as e:
                     print(f"Similarity search failed: {e}")
-                
+            if similarity_text:  
                 # Add initial similarity optionally
                 prompt += "\n\nInitial Similarity Search Candidates:\n" + similarity_text
                 prompt += "\n" + "The initial similarity search results are provided for convenience.\n"
