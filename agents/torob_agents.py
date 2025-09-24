@@ -51,7 +51,6 @@ class ConversationResponse(BaseModel):
 
     # --- Updateable parameters ---
     product_name: Optional[str] = None
-    shop_id: Optional[str] = None
     product_features: Optional[str] = None
 
 
