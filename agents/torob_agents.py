@@ -85,21 +85,28 @@ class CompareResponse(BaseModel):
         return v
 
 
+from pydantic import BaseModel, field_validator
+from typing import Union
+
 class NumericResponse(BaseModel):
     """Response schema for NUMERIC_VALUE queries.
     Must contain only a numeric value parsable to int or float.
     """
-    value: float
+    value: Union[int, float]
 
     @field_validator("value", mode="before")
     def ensure_numeric(cls, v):
         # Accept int or float directly
         if isinstance(v, (int, float)):
-            return float(v)
+            return v
         # Accept string if it can be parsed cleanly
         if isinstance(v, str):
             try:
-                return float(v.strip())
+                num = float(v.strip())
+                # If it's a whole number, return int
+                if num.is_integer():
+                    return int(num)
+                return num
             except ValueError:
                 pass
         raise ValueError("NumericResponse.value must be parsable to int or float")

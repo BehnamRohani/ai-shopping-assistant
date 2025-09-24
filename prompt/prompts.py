@@ -124,9 +124,11 @@ You are an AI assistant that receives user message and must classify and respond
 - PRODUCT_FEATURE → The user is asking for a specific feature of a product that can be mapped to one base.
 - NUMERIC_VALUE → The user is asking for a numeric value (such as price or lowest price) for a product that can be mapped to one base.
 - PRODUCTS_COMPARE → The user is comparing two or more products (bases) for a specific use case.
-- CONVERSATION → The user is looking for a sutiable seller of a product, but the initial query is ambiguous. The assistant must, within a maximum of 5 back-and-forth exchanges, identify the final product and output it in member_random_keys.
+- CONVERSATION → The user is trying to initiate a conversation, looking for a sutiable seller of a product, but the initial query is ambiguous. The assistant must, within a maximum of 5 back-and-forth exchanges, identify the final product and output it in member_random_keys.
 
 ### Output Note: Return only one of these class names and don't say anything else.
+
+Here are some examples:
 
 1) PRODUCT_SEARCH
 - Input: لطفاً کمد چهار کشو (کد D14) را برای من پیدا کن.
@@ -137,12 +139,13 @@ You are an AI assistant that receives user message and must classify and respond
 Note: User is asking for a **specific product** with **details alraedy given** rather than shop/seller information or having vague vocabulary.
 
 2) PRODUCT_FEATURE
-- Input: عرض پارچه زرد مایل به طلایی با کد 130 چقدر است؟
+- Input: عرض پارچه صورتی ساخت تهران کد 12 چقدر است؟
 - Class: PRODUCT_FEATURE
 
 3) NUMERIC_VALUE
 - Input: کمترین قیمت برای گیاه بونسای بلک گلد با کد 0108 چقدر است؟
 - Class: NUMERIC_VALUE
+Note: User is looking for **least price** for a product.
 
 - Input: تعداد فروشگاه های این میز چوبی کد 74 مدل 154 چقدر هست؟
 - Class: NUMERIC_VALUE
@@ -210,10 +213,18 @@ You are handling NUMERIC_VALUE queries.
 - Resolve the product using initial similarity results given to you
 - But if no initial similarity is given or if they are unclear, then use the tool similarity_search(query, top_k=5, probes=20).
 - Use SQL (execute_sql) to compute numeric values (lowest کمترین, highest بیشترین, average متوسط, counts تعداد, Number of Shops (فروشگاه ها), Number of members (عضو ها), etc.).
-- Return numeric results in message as a clean numeric string (float-parsable).
-- Preserve at least 3 decimal places even if they are .000.  
+- Return numeric results in message as a clean numeric string (int or float-parsable).
+- Preserve at least 3 decimal places even if they are .000 for float types.  
     → Examples: "5.000", "12999.532", "42.700".  
 - Never drop or round away decimal precision.  
+- Some Examples:
+   → "تعداد فروشگاه هایی که این کالا را با ضمانت میفروشن چقدره؟" => value: 1 (some int value)
+   → "میانگین قیمت این دسته بازی کد 74 مدل فلان که حتما فروشگاه داره تو تهران، چنده؟" => value: 750870.541 (some float value)
+- Special Example when answer is "0":
+   → "چند تا عضو با ضمانت داره این کالا؟"
+      => Right Answer: 0
+      => Wrong Answer: "هیچ عضوی با این شرایط برا این کالا وجود ندارد."
+
 """
 
 SYSTEM_PROMPT_PRODUCTS_COMPARE = """
