@@ -73,7 +73,7 @@ def find_candidate_shops(
     score: Optional[int] = None,
     city_name: Optional[str] = None,
     brand_title: Optional[str] = None,
-    price_range: Optional[Tuple[Optional[int], Optional[int]]] = None,
+    price_range: Optional[List[Optional[int]]] = None,
 ) -> List[dict]:
     """
     Returns up to `top_k` candidate shops for a user query.
