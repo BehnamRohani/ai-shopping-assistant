@@ -25,6 +25,33 @@ MODEL = "text-embedding-3-small"
 # --- Initialize OpenAI client ---
 client = OpenAI(api_key=OPENAI_API_KEY, base_url = BASE_URL)
 
+def create_member_total_view():
+    """
+    Create the member_total view combining base_products, members, shops, brands, and cities.
+    """
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE OR REPLACE VIEW member_total AS
+                SELECT 
+                    bp.random_key AS base_random_key,
+                    bp.persian_name,
+                    bp.extra_features,
+                    m.shop_id,
+                    m.price,
+                    s.score,
+                    s.has_warranty,
+                    b.title AS brand_title,
+                    ci.name AS city
+                FROM base_products bp
+                JOIN members m ON bp.random_key = m.base_random_key
+                JOIN shops s ON m.shop_id = s.id
+                JOIN brands b ON bp.brand_id = b.id
+                JOIN cities ci ON s.city_id = ci.id;
+                """)
+        conn.commit()
+
+
 def get_embedding(text):
     """Generate embedding vector for a given text using OpenAI."""
     response = client.embeddings.create(
@@ -96,33 +123,30 @@ def find_candidate_shops(
 
     sql = """
         WITH ranked_products AS (
-            SELECT pe.random_key,
-                1 - (pe.embedding <=> %(query_vector)s::vector) AS similarity
-            FROM product_embed pe
-        )
+                SELECT 
+                    pe.random_key,
+                    ROUND(1 - (pe.embedding <=> %s::vector), 3) AS similarity
+                FROM product_embed pe
+            )
         SELECT 
-            bp.persian_name AS product_name,
-            m.shop_id,
-            m.price,
-            ci.name AS city,
-            s.has_warranty,
-            s.score,
-            bp.extra_features,
-            bp.random_key AS base_random_key,
+            mt.persian_name AS product_name,
+            mt.shop_id,
+            mt.price,
+            mt.city,
+            mt.has_warranty,
+            mt.score,
+            mt.extra_features,
+            mt.base_random_key,
             rp.similarity
         FROM ranked_products rp
-        JOIN base_products bp ON rp.random_key = bp.random_key
-        JOIN members m ON bp.random_key = m.base_random_key
-        JOIN shops s ON m.shop_id = s.id
-        JOIN brands b ON bp.brand_id = b.id
-        JOIN cities ci ON s.city_id = ci.id
+        JOIN member_total mt ON rp.random_key = mt.base_random_key
         WHERE 1=1
-        AND (%(has_warranty)s IS NULL OR %(has_warranty)s = 'Doesn''t Matter' OR s.has_warranty = %(has_warranty)s)
-        AND (%(score)s IS NULL OR %(score)s = 'Doesn''t Matter' OR s.score >= %(score)s)
-        AND (%(city_name)s IS NULL OR %(city_name)s = 'Doesn''t Matter' OR ci.name = %(city_name)s)
-        AND (%(brand_title)s IS NULL OR %(brand_title)s = 'Doesn''t Matter' OR b.title = %(brand_title)s)
-        AND m.price BETWEEN %(price_min)s AND %(price_max)s
-        ORDER BY rp.similarity DESC, s.score DESC, m.price ASC
+            AND (%(has_warranty)s IS NULL OR %(has_warranty)s = 'Doesn''t Matter' OR mt.has_warranty = %(has_warranty)s)
+            AND (%(score)s IS NULL OR %(score)s = 'Doesn''t Matter' OR mt.score >= %(score)s)
+            AND (%(city_name)s IS NULL OR %(city_name)s = 'Doesn''t Matter' OR mt.city = %(city_name)s)
+            AND (%(brand_title)s IS NULL OR %(brand_title)s = 'Doesn''t Matter' OR mt.brand_title = %(brand_title)s)
+            AND mt.price BETWEEN %(price_min)s AND %(price_max)s
+        ORDER BY rp.similarity DESC, mt.score DESC, mt.price ASC
         LIMIT %(limit)s;
         """
 
@@ -142,6 +166,4 @@ def find_candidate_shops(
             cur.execute(sql, params)
             results = cur.fetchall()
 
-    cur.close()
-    conn.close()
     return results
