@@ -91,8 +91,6 @@ def find_candidate_shops(
     price_min = price_min if price_min is not None else price_min_default
     price_max = price_max if price_max is not None else price_max_default
 
-    cur = conn.cursor(cursor_factory=RealDictCursor)
-
     sql = """
     WITH ranked_products AS (
         SELECT pe.random_key,
