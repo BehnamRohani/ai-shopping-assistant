@@ -95,49 +95,48 @@ def find_candidate_shops(
     price_max = int(price_max * 1.05)
 
     sql = """
-    WITH ranked_products AS (
-        SELECT pe.random_key,
-               1 - (pe.embedding <=> %s::vector) AS similarity
-        FROM product_embed pe
-    )
-    SELECT 
-        bp.persian_name AS product_name,
-        m.shop_id,
-        m.price,
-        ci.name AS city,
-        s.has_warranty,
-        s.score,
-        bp.extra_features,
-        bp.random_key AS base_random_key,
-        rp.similarity
-    FROM ranked_products rp
-    JOIN base_products bp ON rp.random_key = bp.random_key
-    JOIN members m ON bp.random_key = m.base_random_key
-    JOIN shops s ON m.shop_id = s.id
-    JOIN brands b ON bp.brand_id = b.id
-    JOIN cities ci ON s.city_id = ci.id
-    WHERE 1=1
-      AND (%(has_warranty)s IS NULL OR %(has_warranty)s = 'Doesn''t Matter' OR s.has_warranty = %(has_warranty)s)
-      AND (%(score)s IS NULL OR %(score)s = 'Doesn''t Matter' OR s.score >= %(score)s)
-      AND (%(city_name)s IS NULL OR %(city_name)s = 'Doesn''t Matter' OR ci.name = %(city_name)s)
-      AND (%(brand_title)s IS NULL OR %(brand_title)s = 'Doesn''t Matter' OR b.title = %(brand_title)s)
-      AND m.price BETWEEN %s AND %s
-    ORDER BY rp.similarity DESC, s.score DESC, m.price ASC
-    LIMIT %s;
-    """
+        WITH ranked_products AS (
+            SELECT pe.random_key,
+                1 - (pe.embedding <=> %(query_vector)s::vector) AS similarity
+            FROM product_embed pe
+        )
+        SELECT 
+            bp.persian_name AS product_name,
+            m.shop_id,
+            m.price,
+            ci.name AS city,
+            s.has_warranty,
+            s.score,
+            bp.extra_features,
+            bp.random_key AS base_random_key,
+            rp.similarity
+        FROM ranked_products rp
+        JOIN base_products bp ON rp.random_key = bp.random_key
+        JOIN members m ON bp.random_key = m.base_random_key
+        JOIN shops s ON m.shop_id = s.id
+        JOIN brands b ON bp.brand_id = b.id
+        JOIN cities ci ON s.city_id = ci.id
+        WHERE 1=1
+        AND (%(has_warranty)s IS NULL OR %(has_warranty)s = 'Doesn''t Matter' OR s.has_warranty = %(has_warranty)s)
+        AND (%(score)s IS NULL OR %(score)s = 'Doesn''t Matter' OR s.score >= %(score)s)
+        AND (%(city_name)s IS NULL OR %(city_name)s = 'Doesn''t Matter' OR ci.name = %(city_name)s)
+        AND (%(brand_title)s IS NULL OR %(brand_title)s = 'Doesn''t Matter' OR b.title = %(brand_title)s)
+        AND m.price BETWEEN %(price_min)s AND %(price_max)s
+        ORDER BY rp.similarity DESC, s.score DESC, m.price ASC
+        LIMIT %(limit)s;
+        """
 
-    params = [
-        query_vector_str,  # embedding
-        has_warranty,
-        score,
-        city_name,
-        brand_title,
-        price_min,
-        price_max,
-        # query,  # product_name, can reuse the query
-        # product_features,
-        top_k
-    ]
+    params = {
+        "query_vector": query_vector_str,
+        "has_warranty": has_warranty,
+        "score": score,
+        "city_name": city_name,
+        "brand_title": brand_title,
+        "price_min": price_min,
+        "price_max": price_max,
+        "limit": top_k,
+    }
+
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
             cur.execute(sql, params)
