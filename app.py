@@ -78,7 +78,7 @@ async def chat(req: ChatRequest):
         # Return chat logs
         if input_dict['chat_id'] == 'check_chat_log':
             resp = get_latest_chat(content)
-            return resp
+            return ChatResponse(message = str(resp))
 
         # very small defensive check
         if not req.messages:
