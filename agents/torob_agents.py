@@ -44,14 +44,14 @@ class ConversationResponse(BaseModel):
 
     # --- Not Changeable parameters ---
     has_warranty: Optional[bool] = None
-    score: Optional[int] = None
+    score: Optional[float] = None
     city_name: Optional[str] = None
     brand_title: Optional[str] = None
-    price_range: Optional[Tuple[Optional[int], Optional[int]]] = None
+    price_range: Optional[str] = None
 
     # --- Updateable parameters ---
     product_name: Optional[str] = None
-    shop_id: Optional[int] = None
+    shop_id: Optional[str] = None
     product_features: Optional[str] = None
 
 
@@ -509,8 +509,6 @@ class TorobHybridAgent(TorobAgentBase):
 
             extra_info = load_extra_info(base_id, chat_index)
 
-            print(extra_info)
-
             # --- Step 2: Determine scenario ---
             if not history:
                 classifier_agent = TorobClassifierAgent()
@@ -531,6 +529,8 @@ class TorobHybridAgent(TorobAgentBase):
             if scenario_label in ['CONVERSATION']:
                 extra_info_text = "\n".join([f"{k} = {v}" for k,v in  extra_info.items()])
                 prompt += "Current Parameters:" + "\n\n"  + extra_info_text + "\n\n"
+
+                print(extra_info_text)
 
             scenario_agent = TorobScenarioAgent(scenario_label)
             # Step 1: preprocess input
