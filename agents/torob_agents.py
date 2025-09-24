@@ -64,7 +64,6 @@ class ExtraInfoConversation(BaseModel):
 
     # --- Updateable parameters ---
     product_name: Optional[str] = None
-    shop_id: Optional[int] = None
     product_features: Optional[str] = None
 
 class CompareResponse(BaseModel):
@@ -648,7 +647,6 @@ def normalize_to_shopping_response(output_obj: BaseModel) -> ShoppingResponse:
                     "brand_title": output_obj.brand_title,
                     "price_range": output_obj.price_range,
                     "product_name": output_obj.product_name,
-                    "shop_id": output_obj.shop_id,
                     "product_features": output_obj.product_features,
                     }
         final_response['extra_info'] = extra_info
