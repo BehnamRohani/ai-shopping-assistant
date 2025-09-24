@@ -159,7 +159,7 @@ def load_extra_info(base_id: int, index_chat: int) -> dict:
             """
             SELECT extra_info
             FROM chats
-            WHERE base_id = %s AND index_chat = %s
+            WHERE base_id = %s AND chat_index = %s
             """,
             (base_id, index_chat),
         )
