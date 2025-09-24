@@ -73,7 +73,8 @@ def find_candidate_shops(
     score: Optional[int] = None,
     city_name: Optional[str] = None,
     brand_title: Optional[str] = None,
-    price_range: Optional[List[Optional[int]]] = None,
+    price_min: int = None,
+    price_max: int = None,
 ) -> List[dict]:
     """
     Returns up to `top_k` candidate shops for a user query.
@@ -86,10 +87,9 @@ def find_candidate_shops(
     query_vector_str = "[" + ",".join(map(str, query_vector)) + "]"
 
     # Price range defaults
-    price_min, price_max = 0, 100_000_000_000
-    if price_range:
-        price_min = price_range[0] if price_range[0] is not None else price_min
-        price_max = price_range[1] if price_range[1] is not None else price_max
+    price_min_default, price_max_default = 0, 100_000_000_000
+    price_min = price_min if price_min is not None else price_min_default
+    price_max = price_max if price_max is not None else price_max_default
 
     cur = conn.cursor(cursor_factory=RealDictCursor)
 

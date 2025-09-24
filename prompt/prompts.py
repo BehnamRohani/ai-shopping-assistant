@@ -99,7 +99,8 @@ Inputs:
 - score (int or None): Minimum shop score. None or 'Doesn''t Matter' = ignore.
 - city_name (str or None): Desired city. None or 'Doesn''t Matter' = ignore.
 - brand_title (str or None): Desired brand. None or 'Doesn''t Matter' = ignore.
-- price_range (tuple[int,int] or None): Min and max price. None = ignore.
+- price_min (int or None): Min price. None = ignore.
+- price_max (int or None): Max price. None = ignore.
 - top_k (int, default 3): Maximum number of candidate shops to return.
 
 Outputs:
@@ -260,7 +261,7 @@ Final output must be a ConversationResponse object with:
 ### Turn Logic (1–4)
 
 1. **Update parameters**:  
-   - Extract all values (warranty, score, city, brand, price, product name, features) from user input.  
+   - Extract all possible values (warranty, score, city, brand, price, product name, features) from user input.  
 
 2. **ALWAYS ask for ALL missing fields in every turn**:  
    - If any parameter is still `None`, include ALL missing ones together in the same message. Example:  
@@ -270,7 +271,8 @@ Final output must be a ConversationResponse object with:
    - Even if some fields are missing, you MUST propose up to 3 shop candidates (`LIMIT 3`) every turn.  
    - To get candidates, **run the `find_candidate_shops` tool/function**:  
      • query: user’s product description
-     • has_warranty, score, city_name, brand_title, price_range, product_name, product_features  
+     • has_warranty, score, city_name, brand_title, price_min and prince_max from price range, product_name, product_features  
+     • Let price_min and prince_max be equal if user gives approximate single price (e.g. "یک کالا با قیمت نزدیک 1000000").
    - The tool will return up to 3 candidates ranked by relevance / embedding similarity.  
    - For each candidate, show **at least** these details in Persian:  
      • نام محصول (persian_name)  

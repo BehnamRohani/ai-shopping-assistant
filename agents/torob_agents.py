@@ -47,7 +47,7 @@ class ConversationResponse(BaseModel):
     score: Optional[float] = None
     city_name: Optional[str] = None
     brand_title: Optional[str] = None
-    price_range: Tuple[Optional[int], Optional[int]] = (None, None)
+    price_range: Optional[str] = None
 
     # --- Updateable parameters ---
     product_name: Optional[str] = None
