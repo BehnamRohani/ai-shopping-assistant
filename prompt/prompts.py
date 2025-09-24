@@ -228,7 +228,9 @@ You are handling CONVERSATION queries (vague product/seller requests).
 Goal: Identify both the correct product base and the specific shop (member) the user wants to purchase from. 
 Final output must be a ConversationResponse object with:
 - message: reply to the user in Persian (MUST always be non-null)
-- member_random_keys: at most one element, or None if not finalized
+- member_random_keys (list[str] | null): random_key(s) of shops/sellers (max 1)
+   - At most one element, or None if not finalized
+   - Must be resolved from 'random_key' column of 'members' table.
 - finished: Indicates whether the assistant’s answer is definitive and complete.
     - True means the model is that the output is final.
     - False means the assistant may still need follow-up interactions to finalize the answer. 
@@ -293,7 +295,8 @@ Final output must be a ConversationResponse object with:
    
 ### Note on Early Finalization
    - If you are confient you have the answer, then you may finalize in earlier turns (2-4)
-   - Resolve and return exactly one member_random_key (single element).
+   - MUST output exactly one `member_random_keys` (single element).
+   - Resolve `member_random_keys` from random_key column of members table.
    - Set 'finished' to True.
 
 
