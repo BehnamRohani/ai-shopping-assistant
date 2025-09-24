@@ -546,7 +546,8 @@ class TorobHybridAgent(TorobAgentBase):
                         # Add extra info by now
             
             if scenario_label in ['CONVERSATION']:
-                prompt += "Current Parameters:" + "\n\n"  + str(extra_info) + "\n\n"
+                extra_info_text = "\n".join([f"{k} = {v}" for k,v in  extra_info.items()])
+                prompt += "Current Parameters:" + "\n\n"  + extra_info_text + "\n\n"
 
             scenario_agent = TorobScenarioAgent(scenario_label)
             # Step 1: preprocess input

@@ -167,7 +167,16 @@ def load_extra_info(base_id: int, index_chat: int) -> dict:
         if row and row[0]:
             # row[0] could already be a dict (psycopg2.extras.RealDictCursor)
             return row[0] if isinstance(row[0], dict) else json.loads(row[0])
-        return {}
+        return {
+            "has_warranty": None,
+            "score": None,
+            "city_name": None,
+            "brand_title": None,
+            "price_range": None,
+            "product_name": None,
+            "shop_id": None,
+            "product_features": None
+            }
     finally:
         cur.close()
         conn.close()
