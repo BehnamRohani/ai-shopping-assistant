@@ -9,6 +9,7 @@ from psycopg2.extras import RealDictCursor
 
 load_dotenv()
 
+
 # --- Configuration ---
 DB_CONFIG = {
     "host": os.getenv("DB_HOST"),
@@ -17,13 +18,6 @@ DB_CONFIG = {
     "user": os.getenv("DB_USER"),
     "password": os.getenv("DB_PASSWORD"),
 }
-
-OPENAI_API_KEY = os.getenv("API_KEY")
-BASE_URL = os.getenv("BASE_URL")
-MODEL = "text-embedding-3-small"
-
-# --- Initialize OpenAI client ---
-client = OpenAI(api_key=OPENAI_API_KEY, base_url = BASE_URL)
 
 def create_member_total_view():
     """
@@ -51,6 +45,14 @@ def create_member_total_view():
                 """)
         conn.commit()
 
+OPENAI_API_KEY = os.getenv("API_KEY")
+BASE_URL = os.getenv("BASE_URL")
+MODEL = "text-embedding-3-small"
+
+# --- Initialize OpenAI client ---
+client = OpenAI(api_key=OPENAI_API_KEY, base_url = BASE_URL)
+
+create_member_total_view()
 
 def get_embedding(text):
     """Generate embedding vector for a given text using OpenAI."""
@@ -123,10 +125,10 @@ def find_candidate_shops(
 
     sql = """
         WITH ranked_products AS (
-                SELECT 
-                    pe.random_key,
-                    ROUND(1 - (pe.embedding <=> %s::vector), 3) AS similarity
-                FROM product_embed pe
+                SELECT random_key, 1 - (embedding <=> %s::vector) AS similarity
+                FROM product_embed
+                ORDER BY embedding <=> %s::vector
+                LIMIT 1000   -- fetch top 200 first, not all
             )
         SELECT 
             mt.persian_name AS product_name,
