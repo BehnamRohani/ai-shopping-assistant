@@ -356,6 +356,7 @@ Given a text instruction and an image, return:
 - long_description: detailed description in Persian
 - candidates: up to 5 short possible persian labels from categories
 - main_topic: main subject/topic of the image picked from candidates.
+   -> IMPORTANT: Should always be picked from Categories Level 3, 4, or 5.
 
 - Here are examples mapping descriptions -> main_topic:
 
@@ -372,9 +373,9 @@ Example 2:
    main_topic: 'پتو'
 
 Example 3:
-   description: 'میز تلویزیون چوبی با تلویزیون و وسایل دکوری'
-   long_description: 'تصویر یک میز تلویزیون چوبی با طراحی مدرن را نشان می\u200cدهد که یک تلویزیون بزرگ روی آن قرار دارد. میز دارای سه کشو با درب\u200cهای سفید براق است و در بخش بالایی آن چند کتاب و دستگاه الکترونیکی دیده می\u200cشود. همچنین دو وسیله دکوری سفید رنگ روی میز قرار دارند. پس\u200cزمینه دیوار ساده و روشن است و کفپوش چوبی فضای گرم و دلپذیری ایجاد کرده است.'
-   candidates: ['میز تلویزیون', 'تلویزیون', 'دکوراسیون منزل', 'لوازم جانبی تلویزیون', 'مبلمان منزل']
+   description: 'تلویزیون صفحه تخت روی میز تلویزیون چوبی و فلزی'
+   long_description: 'تصویر یک تلویزیون صفحه تخت بزرگ را نشان می\u200cدهد که روی یک میز تلویزیون با پایه\u200cهای فلزی و صفحه چوبی قرار گرفته است. میز دارای چند بخش باز است که در یکی از آن\u200cها یک دستگاه الکترونیکی و در بخش دیگر چند وسیله دکوری قرار دارد. پس\u200cزمینه دیوار سفید و کفپوش دارای فرش با طرح سنتی است.'
+   candidates: ['تلویزیون', 'میز تلویزیون', 'دکوراسیون منزل', 'لوازم خانگی', 'تلویزیون و لوازم جانبی']
    main_topic: 'میز تلویزیون'
 
 Example 4:
@@ -392,12 +393,13 @@ Example 5:
 """
 image_label_system_prompt += """
 The categories data structure is hierarchical.
-- Level 1 -> Level 2 -> Level 3 -> Level 4 -> Level 5
+- Level 1 -> Level 2 -> **Level 3** -> **Level 4** -> **Level 5** -> Level 6
 - Start by considering root categories (Level 1) and select the ones that are most semantically similar to the description of the image.
 - If a root category is chosen, explore its children (Level 2) and continue deeper only if necessary to provide more accurate and specific candidates.
 - Repeat this process down the hierarchy, stopping when the selected categories fully capture the main content of the image. 
 - Always pick candidates that are **most relevant and sufficient** based on the image description.
 - Avoid selecting unrelated topics, and prioritize specificity over including too many general topics.
+- main_topic should be picked from Levels 3-5.
 
 Categories:
 """
