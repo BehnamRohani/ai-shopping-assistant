@@ -234,7 +234,7 @@ You are handling NUMERIC_VALUE queries.
 SYSTEM_PROMPT_PRODUCTS_COMPARE = """
 You are handling PRODUCTS_COMPARE queries.
 
-→ Run similarity_search for each product mentioned to get base random key if needed.. 
+→ Run similarity_search for each product mentioned to get base random key if needed.
 - Compare them against the user’s stated criteria (extra_features or shop-related info, use SQL if needed).
 - Select the best product with that criteria.
    → IMPORTANT: Return its random_key in base_random_keys **(MAX 1)**.  
@@ -357,9 +357,42 @@ Given a text instruction and an image, return:
 - candidates: up to 5 short possible persian labels from categories
 - main_topic: main subject/topic of the image picked from candidates.
 
+- Here are examples mapping descriptions -> main_topic:
+
+Example 1:
+   description: 'دو جاشمعی چوبی با شمع روشن'
+   long_description: 'در تصویر دو جاشمعی چوبی با طراحی پیچیده و زیبا دیده می\u200cشود که هر کدام یک شمع کوچک روشن روی خود دارند. این جاشمعی\u200cها روی سطحی قرار گرفته\u200cاند و در کنار آن\u200cها چند ساقه گندم دیده می\u200cشود که به زیبایی دکوراسیون افزوده است.'
+   candidates: ['لوازم تزئینی منزل', 'شمع و جاشمعی', 'دکوراسیون منزل', 'لوازم خانگی', 'لوازم آشپزخانه']
+   main_topic: 'شمع و جاشمعی'
+
+Example 2:
+   description: 'پتو با طرح لنگر دریایی در یک فضای داخلی'
+   long_description: 'تصویر یک پتو با طرح لنگر دریایی به رنگ سرمه\u200cای را نشان می\u200cدهد که در یک فضای داخلی قرار گرفته است. در پس\u200cزمینه، پنجره\u200cای با پرده\u200cهای سفید و گیاهی در کنار پتو دیده می\u200cشود. دکوراسیون با تم دریایی شامل حلقه نجات و لنگر روی دیوار، فضای آرام و دلنشینی ایجاد کرده است.'
+   candidates: ['پتو', 'دکوراسیون منزل', 'لوازم خانگی', 'کالای خواب', 'لوازم تزئینی منزل']
+   main_topic: 'پتو'
+
+Example 3:
+   description: 'میز تلویزیون چوبی با تلویزیون و وسایل دکوری'
+   long_description: 'تصویر یک میز تلویزیون چوبی با طراحی مدرن را نشان می\u200cدهد که یک تلویزیون بزرگ روی آن قرار دارد. میز دارای سه کشو با درب\u200cهای سفید براق است و در بخش بالایی آن چند کتاب و دستگاه الکترونیکی دیده می\u200cشود. همچنین دو وسیله دکوری سفید رنگ روی میز قرار دارند. پس\u200cزمینه دیوار ساده و روشن است و کفپوش چوبی فضای گرم و دلپذیری ایجاد کرده است.'
+   candidates: ['میز تلویزیون', 'تلویزیون', 'دکوراسیون منزل', 'لوازم جانبی تلویزیون', 'مبلمان منزل']
+   main_topic: 'میز تلویزیون'
+
+Example 4:
+   description: 'برش دادن میوه در آشپزخانه'
+   long_description: 'برش دادن میوه در آشپزخانه', 'long_description': 'در این تصویر، فردی در حال برش دادن میوه\u200cای سبز رنگ روی تخته برش سیاه در آشپزخانه است. در پس\u200cزمینه یک کاسه شیشه\u200cای حاوی میوه\u200cهای خرد شده و یک گلدان گیاه سبز دیده می\u200cشود. فضای آشپزخانه روشن و مرتب است.'
+   candidates: ['لوازم آشپزخانه', 'ابزار آشپزخانه', 'ظروف سرو و پذیرایی', 'ظروف نگهداری', 'گیاهان آپارتمانی']
+   main_topic: 'تخته کار اشپزخانه'
+
+Example 5:
+   description: 'تلویزیون صفحه تخت با تصویر طبیعی'
+   long_description: 'تصویر یک تلویزیون صفحه تخت با پایه\u200cهای دو طرفه است که تصویری از مناظر طبیعی با رنگ\u200cهای گرم و سرد را نمایش می\u200cدهد. تلویزیون در حالت روشن است و تصویر واضح و با کیفیتی دارد.'
+   candidates: ['تلویزیون', 'تلویزیون و لوازم جانبی', 'لوازم خانگی', 'تلویزیون صفحه تخت', 'لوازم آشپزخانه']
+   main_topic: 'تلویزیون'
+
 """
 image_label_system_prompt += """
 The categories data structure is hierarchical.
+- Level 1 -> Level 2 -> Level 3 -> Level 4 -> Level 5
 - Start by considering root categories (Level 1) and select the ones that are most semantically similar to the description of the image.
 - If a root category is chosen, explore its children (Level 2) and continue deeper only if necessary to provide more accurate and specific candidates.
 - Repeat this process down the hierarchy, stopping when the selected categories fully capture the main content of the image. 
