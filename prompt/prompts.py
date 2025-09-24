@@ -236,7 +236,6 @@ Final output must be a ConversationResponse object with:
     - False means the assistant may still need follow-up interactions to finalize the answer. 
       OR the current interaction is the 5th one, in which you HAVE TO finialize your answer now.
 - plus the full state of all parameters (warranty, score, city, brand, price_range, product_name, shop_id, product_features).
-
 ---
 
 ### Conversation Flow Rules
