@@ -130,7 +130,7 @@ def find_candidate_shops(
                 SELECT random_key, 1 - (embedding <=> %(query_vector)s::vector) AS similarity
                 FROM product_embed
                 ORDER BY embedding <=> %(query_vector)s::vector
-                LIMIT 1000   -- fetch top 1000 first, not all
+                LIMIT 10000   -- fetch top 10000 first, not all
             )
         SELECT 
             mt.persian_name AS product_name,
@@ -146,10 +146,10 @@ def find_candidate_shops(
         FROM ranked_products rp
         JOIN member_total mt ON rp.random_key = mt.base_random_key
         WHERE 1=1
-            AND (%(has_warranty)s IS NULL OR %(has_warranty)s = 'Doesn''t Matter' OR mt.has_warranty = %(has_warranty)s)
-            AND (%(score)s IS NULL OR %(score)s = 'Doesn''t Matter' OR mt.score >= %(score)s)
-            AND (%(city_name)s IS NULL OR %(city_name)s = 'Doesn''t Matter' OR mt.city = %(city_name)s)
-            AND (%(brand_title)s IS NULL OR %(brand_title)s = 'Doesn''t Matter' OR mt.brand_title = %(brand_title)s)
+            AND (%(has_warranty)s IS NULL OR mt.has_warranty = %(has_warranty)s)
+            AND (%(score)s IS NULL OR mt.score >= %(score)s)
+            AND (%(city_name)s IS NULL OR mt.city = %(city_name)s)
+            AND (%(brand_title)s IS NULL OR mt.brand_title = %(brand_title)s)
             AND mt.price BETWEEN %(price_min)s AND %(price_max)s
         ORDER BY rp.similarity DESC, mt.score DESC, mt.price ASC
         LIMIT %(limit)s;
