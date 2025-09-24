@@ -341,10 +341,6 @@ class TorobConversationAgent(TorobAgentBase):
                 system_role
                 + "\n"
                 + SYSTEM_PROMPT_CONVERSATION
-                + "\n"
-                + SIMILARITY_SEARCH_NOTES
-                + "\n"
-                + SQL_NOTES
                 + "\nYou have access to the following tools:"
                 + "\n"
                 + find_candidate_shops_tool + "\n" + similarity_search_tool 

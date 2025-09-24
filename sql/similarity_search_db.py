@@ -129,7 +129,7 @@ def similarity_search_cat(query, top_k: int = 5):
 
 def find_candidate_shops(
     query: str,
-    top_k: int = 3,
+    top_k: int = 1,
     has_warranty: Optional[bool] = None,
     score: Optional[int] = None,
     city_name: Optional[str] = None,
