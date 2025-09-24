@@ -122,7 +122,7 @@ You are an AI assistant that receives user message and must classify and respond
 
 - PRODUCT_SEARCH → The user is looking for a specific product that can be mapped directly to one base.
 - PRODUCT_FEATURE → The user is asking for a specific feature of a product that can be mapped to one base.
-- NUMERIC_VALUE → The user is asking for a numeric value (such as price or lowest price) for a product that can be mapped to one base.
+- NUMERIC_VALUE → The user is asking for a numeric value (such as average/lowest/highest price, or count of shops/members, etc.) for a product that can be mapped to one base.
 - PRODUCTS_COMPARE → The user is comparing two or more products (bases) for a specific use case.
 - CONVERSATION → The user is trying to initiate a conversation, looking for a sutiable seller of a product, but the initial query is ambiguous. The assistant must, within a maximum of 5 back-and-forth exchanges, identify the final product and output it in member_random_keys.
 
@@ -150,6 +150,10 @@ Note: User is looking for **least price** for a product.
 - Input: تعداد فروشگاه های این میز چوبی کد 74 مدل 154 چقدر هست؟
 - Class: NUMERIC_VALUE
 Note: User is looking for **number** of shops available for a product.
+
+- Input: این محصول دارای چند عضو است؟
+- Class: NUMERIC_VALUE
+Note: User is looking for **number** of members available for a base product.
 
 4) PRODUCTS_COMPARE
 - Input: کدام یک از این ماگ‌ها (ماگ کارتونی هندوانه‌ای کد 1375 در مقابل ماگ سرامیکی لاته کد 741) برای کودکان مناسب‌تر است؟
