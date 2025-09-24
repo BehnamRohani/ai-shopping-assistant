@@ -224,6 +224,7 @@ You are handling PRODUCTS_COMPARE queries.
 
 SYSTEM_PROMPT_CONVERSATION = """
 You are handling CONVERSATION queries (vague product/seller requests).
+→ Purpose: The assistant’s goal is to identify not only the correct product base but also the unique shop (member) the user wants.  
 
 Goal: Identify both the correct product base and the specific shop (member) the user wants to purchase from. 
 Final output must be a ConversationResponse object with:
@@ -283,7 +284,7 @@ Final output must be a ConversationResponse object with:
    - The tool will return up to 3 candidates ranked by relevance / embedding similarity.  
    - For each candidate, show **at least** these details in Persian to user:  
      • نام محصول (persian_name)  
-     • شناسه فروشنده (shop_id) -> NOTE: Don't forget to also show this in `message` field to user.
+     • شناسه فروشنده (shop_id) -> NOTE: Don't forget to also show this in `message` field to user. You can check this with user during conversation.
      • قیمت (price, allowing ±5% for flexibility)  
      • شهر (city)  
      • وضعیت گارانتی (has_warranty)  
@@ -291,8 +292,7 @@ Final output must be a ConversationResponse object with:
      • ویژگی‌ها (extra_features if available)  
    - Explicitly ask the user:  
      «آیا یکی از این فروشندگان مناسب شماست یا مایلید اطلاعات بیشتری بدهید؟»  
-   - Always set `shop_id` to the first/best candidate returned by `find_candidate_shops` and confirm with the user in output message.
-   
+   - Use conversation history to improve suggestions.
 ### Note on Early Finalization
    - If you are confient you have the answer, then you may finalize in earlier turns (2-4)
    - MUST output exactly one `member_random_keys` (single element).
@@ -323,6 +323,11 @@ Final output must be a ConversationResponse object with:
 - Always include full candidate details (not just price/warranty).  
 - Always fill `shop_id` with at least one candidate.  
 - Always reply in Persian with a natural message.  
+
+### MOST IMPORTANT CLARIFICATION
+- member_random_key IS NOT EQUAL TO shop_id
+- When the chat is finalized (END of conversation reached), field `member_random_key` should be filled with EXACTLY one **random key** of a product of a seller.
+- Examples: -> member_random_keys = ['xpjtgd']
 """
 
 image_label_system_prompt = """
