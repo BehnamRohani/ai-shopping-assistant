@@ -22,15 +22,50 @@ load_dotenv()
 API_KEY = os.getenv("API_KEY")
 BASE_URL = os.getenv("BASE_URL")
 
+from typing import Optional, List, Tuple
+from pydantic import BaseModel
+
 class ConversationResponse(BaseModel):
     """
-    Response schema for CONVERSATION queries (vague product/seller requests).
+    Output schema for the conversational product-finding agent.
     
-    - message: assistant’s textual reply
-    - member_random_keys: list of member random_key(s) selected (max 1)
+    Includes updated state of constraints/parameters, plus assistant message
+    and final candidate (if found).
     """
+
+    # Assistant reply to user
     message: Optional[str] = None
+
+    # Final selection (at most 1 element)
     member_random_keys: Optional[List[str]] = None
+
+    finished: Optional[bool] = False
+
+    # --- Not Changeable parameters ---
+    has_warranty: Optional[bool] = None
+    score: Optional[int] = None
+    city_name: Optional[str] = None
+    brand_title: Optional[str] = None
+    price_range: Optional[Tuple[Optional[int], Optional[int]]] = None
+
+    # --- Updateable parameters ---
+    product_name: Optional[str] = None
+    shop_id: Optional[int] = None
+    product_features: Optional[str] = None
+
+
+class ExtraInfoConversation(BaseModel):
+    # --- Not Changeable parameters ---
+    has_warranty: Optional[bool] = None
+    score: Optional[int] = None
+    city_name: Optional[str] = None
+    brand_title: Optional[str] = None
+    price_range: Optional[Tuple[Optional[int], Optional[int]]] = None
+
+    # --- Updateable parameters ---
+    product_name: Optional[str] = None
+    shop_id: Optional[int] = None
+    product_features: Optional[str] = None
 
 class CompareResponse(BaseModel):
     """Response schema for PRODUCTS_COMPARE queries."""
@@ -154,7 +189,7 @@ class TorobAgentBase:
             model=self.client,
             system_prompt=system_prompt,
             tools=tools or [],
-            output_type=output_type
+            output_type=output_type,
         )
 
     async def run(
@@ -311,8 +346,25 @@ class TorobConversationAgent(TorobAgentBase):
                 + schema_prompt
             ),
             tools=[similarity_search, execute_sql],
-            output_type=ShoppingResponse,
+            output_type=ConversationResponse,
         )
+    async def run(
+        self,
+        input_data: Any,
+        usage_limits: Optional[UsageLimits] = None,
+        few_shot: int = 0    # NEW
+    ):
+        dict_input = dict(input_data)
+        # Prepend few-shot examples if requested
+        if few_shot > 0 and self.examples:
+            selected_examples = self.examples[:few_shot]
+            input_data =  str(dict_input) + "\n\n Here are some examples:\n\n" + "\n\n".join(selected_examples)
+
+        if usage_limits:
+            result = await self.agent.run(dict_input, usage_limits=usage_limits)
+        else:
+            result = await self.agent.run(dict_input)
+        return result, result.output
 
 # ------------------------
 # Torob Image Agent
@@ -471,6 +523,16 @@ class TorobHybridAgent(TorobAgentBase):
             base_id, chat_index = get_base_id_and_index(chat_id)   # your existing function
             history = get_chat_history(base_id)[-4:]
 
+            extra_info = load_extra_info(base_id, chat_index)
+            extra_info = dict(extra_info)
+
+            print(extra_info)
+
+            # Add extra info by now
+            if scenario_label in ['CONVERSATION']:
+                prompt += "Current Parameters:" + "\n\n"  + str(extra_info) + "\n\n"
+
+
             # --- Step 2: Determine scenario ---
             if not history:
                 classifier_agent = TorobClassifierAgent()
@@ -493,7 +555,7 @@ class TorobHybridAgent(TorobAgentBase):
 
             # Step 2: optionally run similarity search
             similarity_text = ""
-            if use_initial_similarity_search and (not history):
+            if use_initial_similarity_search and (scenario_label not in ['CONVERSATION']):
                 try:
                     candidates = similarity_search(preprocessed_instruction, top_k=5, probes=20)
                     if candidates[0][-1] > 0.7:
@@ -505,21 +567,20 @@ class TorobHybridAgent(TorobAgentBase):
                         print("Similarity search results:\n", similarity_text)
                 except Exception as e:
                     print(f"Similarity search failed: {e}")
+                
+                # Add initial similarity optionally
+                prompt += "\n\nInitial Similarity Search Candidates:\n" + similarity_text
+                prompt += "\n" + "The initial similarity search results are provided for convenience.\n"
 
             # Step 3: build prompt for shopping agent
             prompt += "Input: " + preprocessed_instruction
 
-            # Add initial similarity optionally
-            if similarity_text:
-                prompt += "\n\nInitial Similarity Search Candidates:\n" + similarity_text
-                prompt += "\n" + "The initial similarity search results are provided for convenience."
             # --- Step 3: Run the chosen scenario agent ---
             few_shot = 0
             result, agent_response = await scenario_agent.run(prompt, usage_limits=usage_limits, few_shot=few_shot)
 
             # --- Step 4: Normalize output ---
-            output_shopping_response = normalize_to_shopping_response(agent_response)
-            output_dict = dict(output_shopping_response)
+            output_dict = normalize_to_shopping_response(agent_response)
             if scenario_label not in ['CONVERSATION']:
                 output_dict['finished'] = True
             
@@ -541,10 +602,10 @@ def normalize_to_shopping_response(output_obj: BaseModel) -> ShoppingResponse:
     Converts any scenario agent output to a ShoppingResponse.
     """
     if isinstance(output_obj, ShoppingResponse):
-        return output_obj
+        final_response = dict(output_obj)
 
     elif isinstance(output_obj, CompareResponse):
-        return ShoppingResponse(
+        final_response = ShoppingResponse(
             message=output_obj.message,
             base_random_keys=output_obj.base_random_keys,
             member_random_keys=None,
@@ -552,7 +613,7 @@ def normalize_to_shopping_response(output_obj: BaseModel) -> ShoppingResponse:
         )
 
     elif isinstance(output_obj, NumericResponse):
-        return ShoppingResponse(
+        final_response = ShoppingResponse(
             message=str(output_obj.value),
             base_random_keys=None,
             member_random_keys=None,
@@ -560,7 +621,7 @@ def normalize_to_shopping_response(output_obj: BaseModel) -> ShoppingResponse:
         )
 
     elif isinstance(output_obj, ImageResponse):
-        return ShoppingResponse(
+        final_response = ShoppingResponse(
             message=output_obj.main_topic,
             base_random_keys=None,
             member_random_keys=None,
@@ -568,26 +629,62 @@ def normalize_to_shopping_response(output_obj: BaseModel) -> ShoppingResponse:
         )
 
     elif isinstance(output_obj, ClassificationResponse):
-        return ShoppingResponse(
+        final_response = ShoppingResponse(
             message=output_obj.classification,
             base_random_keys=None,
             member_random_keys=None,
             finished=True
         )
     elif isinstance(output_obj, ConversationResponse):
-        return ShoppingResponse(
+        final_response = ShoppingResponse(
             message=output_obj.message,
             base_random_keys=None,
             member_random_keys=output_obj.member_random_keys,
-            finished=getattr(output_obj, "finished", True)  # optional, default True
+            finished=output_obj.finished  # optional, default True
         )
 
     else:
         # fallback
-        return ShoppingResponse(
+        final_response = ShoppingResponse(
             message=str(output_obj),
             base_random_keys=None,
             member_random_keys=None,
             finished=True
         )
+    final_response = dict(final_response)
+    if isinstance(output_obj, ClassificationResponse):
+        extra_info={
+                    "has_warranty": output_obj.has_warranty,
+                    "score": output_obj.score,
+                    "city_name": output_obj.city_name,
+                    "brand_title": output_obj.brand_title,
+                    "price_range": output_obj.price_range,
+                    "product_name": output_obj.product_name,
+                    "shop_id": output_obj.shop_id,
+                    "product_features": output_obj.product_features,
+                    }
+        final_response['extra_info'] = extra_info
+    return final_response
 
+
+def load_extra_info(conn, base_id: int, index_chat: int) -> Optional[ExtraInfoConversation]:
+    """
+    Load chats.extra_info as a ExtraInfoConversation.
+    """
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT extra_info
+            FROM chats
+            WHERE base_id = %s AND index_chat = %s
+            """,
+            (base_id, index_chat),
+        )
+        row = cur.fetchone()
+        if row and row[0]:
+            return (
+                    ExtraInfoConversation.model_validate(row[0])
+                    if isinstance(row[0], dict)
+                    else ExtraInfoConversation.model_validate_json(row[0])
+                )
+    return ExtraInfoConversation()

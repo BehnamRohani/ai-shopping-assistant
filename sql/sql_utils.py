@@ -91,12 +91,12 @@ def get_base_id_and_index(chat_id: str, time_limit_hours: int = 0.5) -> tuple[st
     conn.close()
 
     return base_id, chat_index
-
 # ------ DB Insert Helper ------
-def insert_chat(input_dict: dict, output_dict: dict):
+def insert_chat(input_dict: dict, output_dict: dict, extra_info: dict = None):
     """
     Insert a chat message into the 'chats' table.
     Each row represents the last user message + model response at this index.
+    Also stores `extra_info` as JSON.
     """
     chat_id = input_dict["chat_id"]   # treat chat_id as base_id
 
@@ -123,19 +123,23 @@ def insert_chat(input_dict: dict, output_dict: dict):
         "base_random_keys": json.dumps(output_dict.get("base_random_keys")),
         "member_random_keys": json.dumps(output_dict.get("member_random_keys")),
         "finished": finished,
+        "extra_info": json.dumps(extra_info, ensure_ascii=False) if extra_info else None,
     }
 
     sql = """
     INSERT INTO chats (
         chat_id, base_id, user_text, user_image_url, chat_index,
-        model_text, model_image_url, base_random_keys, member_random_keys, finished
+        model_text, model_image_url, base_random_keys, member_random_keys, finished, extra_info
     )
-    VALUES (%(chat_id)s, %(base_id)s, %(user_text)s, %(user_image_url)s, %(chat_index)s,
-            %(model_text)s, %(model_image_url)s, %(base_random_keys)s, %(member_random_keys)s, %(finished)s)
+    VALUES (
+        %(chat_id)s, %(base_id)s, %(user_text)s, %(user_image_url)s, %(chat_index)s,
+        %(model_text)s, %(model_image_url)s, %(base_random_keys)s, %(member_random_keys)s,
+        %(finished)s, %(extra_info)s
+    )
     """
     conn = get_db_conn()
     cur = conn.cursor()
-    cur.execute(sql, row)   # <-- replace with your DB exec layer
+    cur.execute(sql, row)
     conn.commit()
     cur.close()
     conn.close()
