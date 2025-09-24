@@ -87,9 +87,12 @@ def find_candidate_shops(
     query_vector_str = "[" + ",".join(map(str, query_vector)) + "]"
 
     # Price range defaults
-    price_min_default, price_max_default = 0, 100_000_000_000
+    price_min_default, price_max_default = 0, 1000000000
     price_min = price_min if price_min is not None else price_min_default
     price_max = price_max if price_max is not None else price_max_default
+
+    price_min = int(price_min * 0.95)
+    price_max = int(price_max * 1.05)
 
     sql = """
     WITH ranked_products AS (
@@ -118,7 +121,7 @@ def find_candidate_shops(
       AND (%(score)s IS NULL OR %(score)s = 'Doesn''t Matter' OR s.score >= %(score)s)
       AND (%(city_name)s IS NULL OR %(city_name)s = 'Doesn''t Matter' OR ci.name = %(city_name)s)
       AND (%(brand_title)s IS NULL OR %(brand_title)s = 'Doesn''t Matter' OR b.title = %(brand_title)s)
-      AND m.price BETWEEN %s * 0.95 AND %s * 1.05
+      AND m.price BETWEEN %s AND %s
     ORDER BY rp.similarity DESC, s.score DESC, m.price ASC
     LIMIT %s;
     """
