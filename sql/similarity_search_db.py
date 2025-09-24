@@ -133,7 +133,6 @@ def find_candidate_shops(
                 LIMIT 1000   -- fetch top 1000 first, not all
             )
         SELECT 
-            mt.
             mt.persian_name AS product_name,
             mt.shop_id,
             mt.price,
