@@ -179,7 +179,7 @@ def find_candidate_shops(
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
             cur.execute("SET enable_seqscan = off;")
-            cur.execute("SET ivfflat.probes = %s;", (30,))
+            cur.execute("SET ivfflat.probes = %s;", (20,))
             cur.execute(sql, params)
             rows = cur.fetchall()
 
@@ -194,7 +194,7 @@ def find_candidate_shops(
             "extra_features": row[6],
             "base_random_key": row[7],
             "member_random_key": row[8],
-            "similarity": round(row[9], 4),
+            "similarity": round(row[9], 4) if row[9] is not None else None,
         }
         for row in rows
     ]
