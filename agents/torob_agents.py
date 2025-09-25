@@ -164,17 +164,10 @@ class ImageTaskClassificationResponse(BaseModel):
 class ImageResponseTopic(BaseModel):
     description: Optional[str] = None
     long_description: Optional[str] = None
-    candidates: Optional[List[str]] = None
+    candidate_names: Optional[List[str]] = None
+    candidates_category: Optional[List[str]] = None
+    similarities: Optional[List[float]] = None
     main_topic: Optional[str] = None
-
-    @field_validator("candidates")
-    def ensure_candidates(cls, v):
-        if v is not None:
-            if not isinstance(v, list):
-                raise ValueError("candidates must be a list of strings")
-            if not all(isinstance(x, str) and x.strip() for x in v):
-                raise ValueError("candidates must contain only non-empty strings")
-        return v
 
 class ImageResponseSearch(BaseModel):
     description: Optional[str] = None
