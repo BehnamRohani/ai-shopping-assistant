@@ -70,53 +70,6 @@ Example: Features may be width (عرض), height (ارتفاع), size (انداز
 - name: Name of the city.
 """
 
-similarity_search_tool = """
-similarity_search(query: str, top_k: int = 5, probes: int = 20) -> list[tuple[str, str, float]]:
-   Performs a semantic similarity search in the products database using pgvector embeddings.  
-   Returns a list of tuples: (random_key, persian_name, similarity_score).  
-   → Use this when retrieving product random_key(s) from user queries, even if the product name is slightly different.  
-   → `top_k` controls how many candidates to retrieve; `probes` controls recall vs. speed.  
-"""
-
-execute_query_tool = """
-execute_sql(query: str) -> list[RealDictRow]: 
-   Executes a PostgreSQL query and returns results.
-   → Run SQL directly.
-"""
-
-find_candidate_shops_tool = """
-Tool Name: find_candidate_shops
-
-Description:
-Use this tool to find up to top_k (default 3) candidate shops for a user query.
-It ranks products using semantic similarity of the Persian product name (via embeddings)
-and applies optional filters: warranty, shop score, city, brand, price range, and extra features.
-It always returns candidates even if some fields are None or 'Ignore'.
-
-Inputs:
-- query (str): User's product description -> i.e., the product_name or more.
-- has_warranty (bool or None): If user wants warranty. None or 'Ignore' = ignore.
-- score (int or None): Minimum shop score. None or 'Ignore' = ignore.
-- city_name (str or None): Desired city. None or 'Ignore' = ignore.
-- brand_title (str or None): Desired brand. None or 'Ignore' = ignore.
-- price_min (int or None): Min price. None = ignore.
-- price_max (int or None): Max price. None = ignore.
-- top_k (int, default 3): Maximum number of candidate shops to return.
-
-Outputs:
-- List of dictionaries, each containing:
-    - product_name (str)
-    - shop_id (int)
-    - price (int)
-    - city (str)
-    - has_warranty (bool)
-    - score (int)
-    - extra_features (str)
-    - base_random_key (str)
-    - member_random_key (str) <- member_random_keys list should be filled with this value at the end
-    - similarity (float): embedding similarity to the query
-"""
-
 input_classification_sys_prompt = """
 You are an AI assistant that receives user message and must classify and respond according to five scenarios. Each scenario maps to one of the following classes:
 
@@ -162,6 +115,70 @@ Note: User is looking for **number** of members available for a base product.
 5) CONVERSATION
 - Input: من دنبال یک میز مناسب برای نوشتن و کارهای روزانه هستم. می‌تونی کمکم کنی یک فروشنده خوب پیدا کنم؟
 - Class: CONVERSATION
+"""
+
+img_input_classification_sys_prompt = """
+You are an AI assistant that receives user message (with image) and must classify and respond according to two scenarios. Each scenario maps to one of the following classes:
+
+- IMAGE_SEARCH → The user is looking for a product related to the image. The image must be mapped to one base.  
+  Example:  
+  - Input: یک محصول مرتبط مناسب با تصویر به من بدهید.  
+  - Class: IMAGE_SEARCH  
+
+- IMAGE_TOPIC → The user is asking for the main object or concept in the image. Only the general/main subject is expected, not detailed features.  
+  Example:  
+  - Input: شیء و مفهوم اصلی در تصویر چیست؟  
+  - Class: IMAGE_TOPIC  
+
+### Output Note: Return only one of these class names and don't say anything else.
+"""
+
+
+similarity_search_tool = """
+similarity_search(query: str, top_k: int = 5, probes: int = 20) -> list[tuple[str, str, float]]:
+   Performs a semantic similarity search in the products database using pgvector embeddings.  
+   Returns a list of tuples: (random_key, persian_name, similarity_score).  
+   → Use this when retrieving product random_key(s) from user queries, even if the product name is slightly different.  
+   → `top_k` controls how many candidates to retrieve; `probes` controls recall vs. speed.  
+"""
+
+execute_query_tool = """
+execute_sql(query: str) -> list[RealDictRow]: 
+   Executes a PostgreSQL query and returns results.
+   → Run SQL directly.
+"""
+
+find_candidate_shops_tool = """
+Tool Name: find_candidate_shops
+
+Description:
+Use this tool to find up to top_k (default 3) candidate shops for a user query.
+It ranks products using semantic similarity of the Persian product name (via embeddings)
+and applies optional filters: warranty, shop score, city, brand, price range, and extra features.
+It always returns candidates even if some fields are None or 'Ignore'.
+
+Inputs:
+- query (str): User's product description -> i.e., the product_name or more.
+- has_warranty (bool or None): If user wants warranty. None or 'Ignore' = ignore.
+- score (int or None): Minimum shop score. None or 'Ignore' = ignore.
+- city_name (str or None): Desired city. None or 'Ignore' = ignore.
+- brand_title (str or None): Desired brand. None or 'Ignore' = ignore.
+- price_min (int or None): Min price. None = ignore.
+- price_max (int or None): Max price. None = ignore.
+- top_k (int, default 3): Maximum number of candidate shops to return.
+
+Outputs:
+- List of dictionaries, each containing:
+    - product_name (str)
+    - shop_id (int)
+    - price (int)
+    - city (str)
+    - has_warranty (bool)
+    - score (int)
+    - extra_features (str)
+    - base_random_key (str)
+    - member_random_key (str) <- member_random_keys list should be filled with this value at the end
+    - similarity (float): embedding similarity to the query
 """
 
 SIMILARITY_SEARCH_NOTES = """
@@ -326,7 +343,6 @@ Final output must be a ConversationResponse object with:
        "member_random_keys": ["xpjtgd"],   // ← from members.random_key, NOT shop_id
        "finished": true
      }
-
 ---
 
 ### Turn 5
@@ -369,7 +385,7 @@ Example 3:
 
 Example 4:
    description: 'برش دادن میوه در آشپزخانه'
-   long_description: 'برش دادن میوه در آشپزخانه', 'long_description': 'در این تصویر، فردی در حال برش دادن میوه\u200cای سبز رنگ روی تخته برش سیاه در آشپزخانه است. در پس\u200cزمینه یک کاسه شیشه\u200cای حاوی میوه\u200cهای خرد شده و یک گلدان گیاه سبز دیده می\u200cشود. فضای آشپزخانه روشن و مرتب است.'
+   'long_description': 'در این تصویر، فردی در حال برش دادن میوه\u200cای سبز رنگ روی تخته برش سیاه در آشپزخانه است. در پس\u200cزمینه یک کاسه شیشه\u200cای حاوی میوه\u200cهای خرد شده و یک گلدان گیاه سبز دیده می\u200cشود. فضای آشپزخانه روشن و مرتب است.'
    main_topic: 'تخته کار اشپزخانه'
 
 Example 5:
@@ -392,6 +408,36 @@ Given a text instruction and an image, return:
 - Fill 'candidates' field by these titles.
 - Finally, pick of these 'candidates' as 'man_topic' -> Use your reasoning and judgement by **focusing** on specific keywords in 'long_description'.
 """ + "\n\n" + image_label_examples
+
+image_search_system_prompt = """
+You are an AI assistant that receives an image and must find the most relevant base product. 
+Your task is to return a JSON object strictly in the format of the class ImageResponseSearch:
+
+class ImageResponseSearch(BaseModel):
+    description: Optional[str] = None
+    long_description: Optional[str] = None
+    candidate_names: Optional[List[str]] = None
+    candidates: Optional[List[str]] = None
+    similarities: Optional[List[float]] = None
+    top_candidate: Optional[str] = None
+
+### Methodology:
+1. Generate a **description**: a short one-line caption in Persian summarizing the image.
+2. Generate a **long_description**: a more detailed description in Persian about the image and the product concept.
+3. Run `similarity_search` using multiple queries derived from the description and long_description.  
+   - Retrieve the top 5 most similar base products.
+4. Fill the following fields:
+   - **candidates**: list of 5 base product keys (strings).
+   - **candidate_names**: list of their product names in Persian, aligned with candidates.
+   - **similarities**: list of their similarity scores (rounded to 4 decimal places), aligned with candidates.
+   - **top_candidate**: the base product key with the highest similarity score.
+5. Return the full JSON object.
+
+### Output Rules:
+- Always respond ONLY with the JSON object conforming to ImageResponseSearch.
+- All text fields (description, long_description, candidate_names) must be in Persian.
+- Similarities must be floats with 4 decimal places.
+"""
 
 system_prompt_sql = """
 You are an expert SQL assistant for torob.com. 

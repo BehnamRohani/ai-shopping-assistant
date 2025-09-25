@@ -14,6 +14,7 @@ from sql.sql_utils import execute_sql
 from sql.sql_utils import get_chat_history, get_base_id_and_index
 from utils.utils import preprocess_persian
 from sql.sql_utils import load_extra_info
+from utils.utils import extract_media_type_and_bytes
 
 # ------------------------
 # Load environment
@@ -148,8 +149,19 @@ class ClassificationResponse(BaseModel):
             raise ValueError(f"classification must be one of {allowed}")
         return v
 
+class ImageTaskClassificationResponse(BaseModel):
+    """Output of TorobClassifierAgent."""
+    classification: str
 
-class ImageResponse(BaseModel):
+    @field_validator("classification")
+    def ensure_valid_class(cls, v):
+        allowed = {"IMAGE_TOPIC", "IMAGE_SEARCH"}
+        if v not in allowed:
+            raise ValueError(f"classification must be one of {allowed}")
+        return v
+
+
+class ImageResponseTopic(BaseModel):
     description: Optional[str] = None
     long_description: Optional[str] = None
     candidates: Optional[List[str]] = None
@@ -164,6 +176,13 @@ class ImageResponse(BaseModel):
                 raise ValueError("candidates must contain only non-empty strings")
         return v
 
+class ImageResponseSearch(BaseModel):
+    description: Optional[str] = None
+    long_description: Optional[str] = None
+    candidate_names: Optional[List[str]] = None
+    candidates: Optional[List[str]] = None
+    similarities: Optional[List[float]] = None
+    top_candidate: Optional[str] = None
 # ------------------------
 # Base Class
 # ------------------------
@@ -200,19 +219,28 @@ class TorobAgentBase:
 
     async def run(
         self,
-        input_data: Any,
+        input_text: str,
+        image_b64: str = None,
         usage_limits: Optional[UsageLimits] = None,
         few_shot: int = 0    # NEW
     ):
         # Prepend few-shot examples if requested
         if few_shot > 0 and self.examples:
             selected_examples = self.examples[:few_shot]
-            input_data =  str(input_data) + "\n\n Here are some examples:\n\n" + "\n\n".join(selected_examples)
+            input_text +=  "\n\n Here are some examples:\n\n" + "\n\n".join(selected_examples)
 
-        if usage_limits:
-            result = await self.agent.run(input_data, usage_limits=usage_limits)
+        if image_b64:
+            image_bytes, media_type = extract_media_type_and_bytes(image_b64)
+            user_message = [
+                input_text,
+                BinaryContent(data=image_bytes, media_type=media_type),
+            ]
         else:
-            result = await self.agent.run(input_data)
+            user_message = input_text
+        if usage_limits:
+            result = await self.agent.run(user_message, usage_limits=usage_limits)
+        else:
+            result = await self.agent.run(user_message)
         return result, result.output
 
 class TorobClassifierAgent(TorobAgentBase):
@@ -222,6 +250,15 @@ class TorobClassifierAgent(TorobAgentBase):
             model_name=os.getenv("CLASSIFIER_MODEL"),
             system_prompt=input_classification_sys_prompt,
             output_type=ClassificationResponse,
+        )
+
+class TorobImageTaskClassifierAgent(TorobAgentBase):
+    def __init__(self):
+        super().__init__(
+            name="TorobImageTaskClassifierAgent",
+            model_name=os.getenv("CLASSIFIER_MODEL"),
+            system_prompt=img_input_classification_sys_prompt,
+            output_type=ImageTaskClassificationResponse,
         )
 
 # ------------------------
@@ -356,7 +393,6 @@ class TorobConversationAgent(TorobAgentBase):
 # ------------------------
 # Torob Image Agent
 # ------------------------
-import base64
 from pydantic_ai import BinaryContent
 import pickle
 
@@ -373,52 +409,32 @@ class TorobImageClassifierAgent(TorobAgentBase):
             name="TorobImageClassifierAgent",
             model_name=os.getenv("IMAGE_MODEL"),
             system_prompt=image_label_system_prompt,
-            output_type=ImageResponse,
+            output_type=ImageResponseTopic,
             tools=[similarity_search_cat],
         )
 
-    async def run(
-        self,
-        input_text: str,
-        image_b64: str,
-        usage_limits: Optional[Any] = None,
-    ):
-        """
-        Run the image agent with text + image_b64.
-        """
 
-        def extract_media_type_and_bytes(data_uri: str):
-            if not data_uri.startswith("data:"):
-                raise ValueError("Invalid data URI format")
-            header, b64_data = data_uri.split(",", 1)
-            media_type = header.split(";")[0][5:]  # remove "data:"
-            return base64.b64decode(b64_data), media_type
+class TorobImageSearchAgent(TorobAgentBase):
+    def __init__(self):
+        # Load category labels from pickle
+        # with open("categories_by_level.pkl", "rb") as f:
+        #     loaded_levels = pickle.load(f)
+        # labels_quotes = [f"Level {lvl}: {cats}" "\n" for lvl, cats in loaded_levels.items()]
 
-        try:
-            image_bytes, media_type = extract_media_type_and_bytes(image_b64)
-            user_message = [
-                input_text,
-                BinaryContent(data=image_bytes, media_type=media_type),
-            ]
+        # image_system_prompt = image_label_system_prompt + "\n" + "\n".join(labels_quotes)
 
-            if usage_limits:
-                result = await self.agent.run(user_message, usage_limits=usage_limits)
-            else:
-                result = await self.agent.run(user_message)
-
-            return result, dict(result.output)
-
-        except Exception as e:
-            error = {
-                "description": None,
-                "long_description": None,
-                "candidates": [],
-                "main_topic": None,
-                "message": f"-- ERROR: {str(e)}"
-            }
-            return None, error
-
-
+        super().__init__(
+            name="TorobImageSearchAgent",
+            model_name=os.getenv("IMAGE_MODEL"),
+            system_prompt=(
+                + image_search_system_prompt
+                + "\nYou have access to the following tools:"
+                + "\n" + similarity_search_tool
+                + "\n" + execute_query_tool
+            ),
+            output_type=ImageResponseSearch,
+            tools=[similarity_search, execute_sql],
+        )
 
 class TorobScenarioAgent(TorobAgentBase):
     """
@@ -433,6 +449,7 @@ class TorobScenarioAgent(TorobAgentBase):
         "PRODUCTS_COMPARE",
         "CONVERSATION",
         "IMAGE_TOPIC",
+        "IMAGE_SEARCH",
     }
 
     def __init__(self, scenario: str, examples: Optional[List[str]] = None):
@@ -451,6 +468,8 @@ class TorobScenarioAgent(TorobAgentBase):
             agent = TorobConversationAgent()
         elif scenario_upper == "IMAGE_TOPIC":
             agent = TorobImageClassifierAgent()
+        elif scenario_upper == "IMAGE_SEARCH":
+            agent = TorobImageSearchAgent()
 
         # Copy attributes from the selected agent
         self.__dict__.update(agent.__dict__)
@@ -469,7 +488,9 @@ class TorobHybridAgent(TorobAgentBase):
         )
 
         # Initialize specialized agents
-        self.image_agent = TorobImageClassifierAgent()
+        self.image_agent_classifier = TorobImageTaskClassifierAgent()
+        self.image_agent_label = TorobImageClassifierAgent()
+        self.image_agent_search = TorobImageSearchAgent()
 
     async def run(self, input_dict: dict, usage_limits: Optional[Any] = None, 
                   use_initial_similarity_search: bool = True):
@@ -481,6 +502,7 @@ class TorobHybridAgent(TorobAgentBase):
         }
         """
         try:
+            few_shot = 0
             prompt = ""
             # Extract first text and first image if any
             all_texts = [m["content"] for m in input_dict["messages"] if m["type"] == "text"]
@@ -491,21 +513,21 @@ class TorobHybridAgent(TorobAgentBase):
 
             # --- Step 1: Handle image request ---
             if user_image:
-                result, image_response = await self.image_agent.run(
+                result, scenario_label = await self.image_agent_classifier.run(
                     input_text=instruction,
-                    image_b64=user_image,
+                    # image_b64=user_image,
                     usage_limits=usage_limits
                 )
-
-                print(dict(image_response))
-
-                final_dict = ShoppingResponse(
-                    message=image_response.get('main_topic'),
-                    base_random_keys=None,
-                    member_random_keys=None,
-                    finished=True,
-                )
-                return result, dict(final_dict)
+                scenario_label = scenario_label.classification
+                print(scenario_label)
+                scenario_agent = TorobScenarioAgent(scenario_label)
+                result, agent_response = await scenario_agent.run(input_text= instruction,
+                                                                  image_b64 = user_image,
+                                                                  usage_limits=usage_limits, 
+                                                                  few_shot=few_shot)
+                print(dict(agent_response))
+                output_dict = normalize_to_shopping_response(agent_response)
+                return result, output_dict
 
             chat_id = input_dict["chat_id"]
             base_id, chat_index = get_base_id_and_index(chat_id)   # your existing function
@@ -558,15 +580,11 @@ class TorobHybridAgent(TorobAgentBase):
                 prompt += "\n" + "The initial similarity search results are provided for convenience.\n"
 
             # Step 3: build prompt for shopping agent
-            prompt += "Current Input: " + preprocessed_instruction
-
+            prompt += "Input: " + preprocessed_instruction
             # --- Step 3: Run the chosen scenario agent ---
-            few_shot = 0
             result, agent_response = await scenario_agent.run(prompt, usage_limits=usage_limits, few_shot=few_shot)
-
             # --- Step 4: Normalize output ---
             output_dict = normalize_to_shopping_response(agent_response)
-            
             return result, output_dict
 
         except Exception as e:
@@ -601,10 +619,17 @@ def normalize_to_shopping_response(output_obj: BaseModel) -> ShoppingResponse:
             finished=True
         )
 
-    elif isinstance(output_obj, ImageResponse):
+    elif isinstance(output_obj, ImageResponseTopic):
         final_response = ShoppingResponse(
             message=output_obj.main_topic,
             base_random_keys=None,
+            member_random_keys=None,
+            finished=True
+        )
+    elif isinstance(output_obj, ImageResponseSearch):
+        final_response = ShoppingResponse(
+            message=output_obj.message,
+            base_random_keys=output_obj.top_candidate,
             member_random_keys=None,
             finished=True
         )

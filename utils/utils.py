@@ -1,4 +1,5 @@
 import re
+import base64
 
 # Persian/Arabic numerals → English
 PERSIAN_DIGITS = "۰۱۲۳۴۵۶۷۸۹"
@@ -18,6 +19,13 @@ NORMALIZATION_MAP = {
     "أ": "ا",   # Alef with Hamza above → Alef
     "آ": "ا",   # Alef Madda → Alef (optional)
 }
+
+def extract_media_type_and_bytes(data_uri: str):
+    if not data_uri.startswith("data:"):
+        raise ValueError("Invalid data URI format")
+    header, b64_data = data_uri.split(",", 1)
+    media_type = header.split(";")[0][5:]  # remove "data:"
+    return base64.b64decode(b64_data), media_type
 
 def preprocess_persian(text: str) -> str:
     """
