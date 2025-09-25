@@ -549,7 +549,7 @@ class TorobHybridAgent(TorobAgentBase):
             base_id, chat_index = get_base_id_and_index(chat_id)   # your existing function
             history = get_chat_history(base_id)[-4:]
             info_chat_index = max(1,chat_index-1)
-            # extra_info = load_extra_info(base_id, info_chat_index)
+            extra_info = load_extra_info(base_id, info_chat_index)
 
             # # --- Step 2: Determine scenario ---
             if not history:
@@ -559,22 +559,22 @@ class TorobHybridAgent(TorobAgentBase):
                 print(scenario_label)
             else:
                 scenario_label = 'CONVERSATION'
-                # history_text = "\n".join(
-                #     [f"Input No.({(i+1)}): {h['message']}\nResponse No.({(i+1)}): {h['response']}" for i,h in enumerate(history)]
-                # )
-                # print(history_text)
-                # prompt += "Conversation history:\n" + history_text + "\n\n"
-                # if chat_index ==5:
-                #     prompt += "[IMPORTANT] This is the Fifth turn. Your response is the end of conversation. You must answer the user now definitively.\n"
-                #         # Add extra info by now
-            message_history = None
-            local_path = ""
+                history_text = "\n".join(
+                    [f"Input No.({(i+1)}): {h['message']}\nResponse No.({(i+1)}): {h['response']}" for i,h in enumerate(history)]
+                )
+                print(history_text)
+                prompt += "Conversation history:\n" + history_text + "\n\n"
+                if chat_index ==5:
+                    prompt += "[IMPORTANT] This is the Fifth turn. Your response is the end of conversation. You must answer the user now definitively.\n"
+                        # Add extra info by now
+            # message_history = None
+            # local_path = ""
             if scenario_label in ['CONVERSATION']:
-                local_path = history_folder  /  f"{base_id}.json"
-                loaded_history = load_history(local_path)
-                message_history =  ModelMessagesTypeAdapter.validate_python(loaded_history)
-                # extra_info_text = "\n".join([f"{k} = {v}" for k,v in  extra_info.items()])
-                # prompt += "Previous Parameters:" + "\n\n"  + extra_info_text + "\n\n"
+                # local_path = history_folder  /  f"{base_id}.json"
+                # loaded_history = load_history(local_path)
+                # message_history =  ModelMessagesTypeAdapter.validate_python(loaded_history)
+                extra_info_text = "\n".join([f"{k} = {v}" for k,v in  extra_info.items()])
+                prompt += "Previous Parameters:" + "\n\n"  + extra_info_text + "\n\n"
 
             scenario_agent = TorobScenarioAgent(scenario_label)
             # Step 1: preprocess input
@@ -603,15 +603,15 @@ class TorobHybridAgent(TorobAgentBase):
             prompt_prefix = f"Input ({chat_index}): " if scenario_label in ['CONVERSATION'] else "Input: "
             prompt += prompt_prefix + preprocessed_instruction
             # --- Step 3: Run the chosen scenario agent ---
-            print(message_history)
             result, agent_response = await scenario_agent.run(prompt, 
                                                               usage_limits=usage_limits, 
                                                               few_shot=few_shot,
-                                                              message_history= message_history)
-            if scenario_label in ['CONVERSATION']:
-                current_messages = result.all_messages()
-                print(current_messages)
-                save_history(current_messages, local_path)
+                                                            #   message_history= message_history
+                                                              )
+            # if scenario_label in ['CONVERSATION']:
+            #     current_messages = result.new_messages()
+            #     print(current_messages)
+            #     save_history(current_messages, local_path)
             # --- Step 4: Normalize output ---
             output_dict = normalize_to_shopping_response(agent_response)
             return result, output_dict
