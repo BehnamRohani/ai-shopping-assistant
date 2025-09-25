@@ -398,12 +398,12 @@ Example 5:
 """
 
 image_label_system_prompt = """
-You are an AI assistant that processes images and finds the main object(s) and topic of an image.
+You are an AI assistant that processes images and finds the main object(s) and topic of an product image.
 
 Steps:
 1. Generate 'description' (a short one-line caption in Persian).
 2. Generate 'long_description' (a more detailed Persian description).
-3. Use 'description' to call `similarity_search_cat` and bring top 5 most similar products with their categories.
+3. Use 'long_description' to call `similarity_search_cat` and bring top 5 most similar products with their categories.
 4. Fill:
    - description: Persian one-line caption
    - long_description: detailed Persian description
