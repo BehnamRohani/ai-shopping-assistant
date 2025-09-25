@@ -403,7 +403,7 @@ class TorobImageClassifierAgent(TorobAgentBase):
             model_name=os.getenv("IMAGE_MODEL"),
             system_prompt=image_system_prompt,
             output_type=ImageResponseTopic,
-            tools=[similarity_search_cat],
+            # tools=[],
         )
 
 

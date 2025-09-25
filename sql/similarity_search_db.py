@@ -97,19 +97,17 @@ def similarity_search(query, top_k: int = 5, probes: int = 20):
 
     return results
 
-def similarity_search_cat(query, top_k: int = 5, probes: int = 20):
+def similarity_search_cat(query, top_k: int = 5):
     """
-    Perform a similarity search in the product_embed table, and return 
-    product names with their corresponding categories.
+    Perform a similarity search in the categories table using pgvector.
 
     Args:
         query (str): The query text.
-        top_k (int): Number of similar products to return.
-        probes (int): Number of IVF lists to probe.
+        top_k (int): Number of similar categories to return.
 
     Returns:
         List[Dict]: [
-            {"product_name": str, "category": str, "similarity": float}, ...
+            {"category": str, "similarity": float}, ...
         ]
     """
     query_vector = get_embedding(query)  # list[float]
@@ -118,24 +116,22 @@ def similarity_search_cat(query, top_k: int = 5, probes: int = 20):
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
             # Force use of IVFFlat index
-            cur.execute("SET enable_seqscan = off;")
-            cur.execute("SET ivfflat.probes = %s;", (probes,))
-
             cur.execute("""
-                SELECT p.persian_name,
-                       c.title AS category,
-                       1 - (p.embedding <=> %s) AS similarity
-                FROM product_embed p
-                JOIN base_products bp ON p.random_key = bp.random_key
-                JOIN categories c ON bp.category_id = c.id
-                ORDER BY p.embedding <=> %s
+                SELECT c.title,
+                       1 - (c.embedding <=> %s) AS similarity
+                FROM categories c
+                ORDER BY c.embedding <=> %s
                 LIMIT %s
             """, (query_vector_str, query_vector_str, top_k))
 
             results = cur.fetchall()
-    results = [{"product_name": row[0], "category": row[1], "similarity": round(row[2], 4)} for row in results]
-    print(results)
+
+    results = [
+        {"category": row[0], "similarity": round(row[1], 4)}
+        for row in results
+    ]
     return results
+
 
 def find_candidate_shops(
     query: str,
@@ -214,4 +210,5 @@ def find_candidate_shops(
         with conn.cursor() as cur:
             cur.execute(sql, params)
             results = cur.fetchall()
+    print(results)
     return results
