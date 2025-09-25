@@ -427,7 +427,7 @@ class TorobImageSearchAgent(TorobAgentBase):
             name="TorobImageSearchAgent",
             model_name=os.getenv("IMAGE_MODEL"),
             system_prompt=(
-                + image_search_system_prompt
+                image_search_system_prompt
                 + "\nYou have access to the following tools:"
                 + "\n" + similarity_search_tool
                 + "\n" + execute_query_tool
