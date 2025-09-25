@@ -7,9 +7,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi import Request
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from shopping_agent_old import run_shopping_agent
 from sql.similarity_search_db import similarity_search
-from sql.sql_utils import init_logs_table, insert_log, insert_chat, get_chat_history, get_latest_chat
+from sql.sql_utils import init_logs_table, insert_log, insert_chat, get_latest_chat_history
 from agents.torob_agents import TorobHybridAgent
 from pydantic_ai import UsageLimits
 
@@ -77,7 +76,7 @@ async def chat(req: ChatRequest):
             return resp
         # Return chat logs
         if input_dict['chat_id'] == 'check_chat_log':
-            resp = get_latest_chat(content)
+            resp = get_latest_chat_history(content)
             return ChatResponse(message = str(resp))
 
         # very small defensive check

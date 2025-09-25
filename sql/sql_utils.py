@@ -336,7 +336,6 @@ def execute_sql(query: str):
                 return cur.fetchall()
     except Exception as e:
         return f"-- ERROR executing query: {str(e)}"
-    
 
 
 def extract_sql(text: str) -> str:
@@ -363,7 +362,7 @@ def extract_sql(text: str) -> str:
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-def get_chat_history(chat_id: str):
+def get_latest_chat_history(chat_id: str):
     conn = psycopg2.connect(**DB_CONFIG)
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
