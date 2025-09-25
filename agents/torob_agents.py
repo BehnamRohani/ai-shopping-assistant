@@ -568,9 +568,9 @@ class TorobHybridAgent(TorobAgentBase):
                 #     prompt += "[IMPORTANT] This is the Fifth turn. Your response is the end of conversation. You must answer the user now definitively.\n"
                 #         # Add extra info by now
             message_history = None
-            local_path = history_folder
+            local_path = ""
             if scenario_label in ['CONVERSATION']:
-                local_path += f"/{base_id}.json"
+                local_path = history_folder  /  f"{base_id}.json"
                 loaded_history = load_history(local_path)
                 message_history =  ModelMessagesTypeAdapter.validate_python(loaded_history)
                 # extra_info_text = "\n".join([f"{k} = {v}" for k,v in  extra_info.items()])
