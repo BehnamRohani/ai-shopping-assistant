@@ -20,7 +20,7 @@ from pydantic_ai.messages import ModelMessagesTypeAdapter
 import json
 from pathlib import Path
 
-history_folder = Path("../history")
+history_folder = Path("./history")
 history_folder.mkdir(parents=True, exist_ok=True)
 
 def save_history(messages, path: str = "chat_history.json"):
