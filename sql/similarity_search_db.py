@@ -132,23 +132,25 @@ def similarity_search_cat(query, top_k: int = 5):
     ]
     return results
 
+from typing import List, Optional, Any, Dict
+import psycopg2
 
 def find_candidate_shops(
     query: str,
     top_k: int = 1,
-    has_warranty: Optional[bool] = None,
-    score: Optional[int] = None,
-    city_name: Optional[str] = None,
-    brand_title: Optional[str] = None,
-    price_min: int = None,
-    price_max: int = None,
+    price_min: Optional[int] = None,
+    price_max: Optional[int] = None,
+    **filters: Any,
 ) -> List[dict]:
     """
     Returns up to `top_k` candidate shops for a user query.
     - Uses product embeddings for similarity on Persian product name.
-    - Respects filters: warranty, score, city, brand, price.
-    - None or 'Doesn''t Matter' = ignore filter.
+    - Respects filters with IS NULL OR ... conditions.
+    - Special cases:
+        * score → mt.score >= %(score)s
+        * price_min/price_max → BETWEEN with ±5% tolerance
     """
+
     # Convert query to embedding
     query_vector = get_embedding(query)  # Returns list[float]
     query_vector_str = "[" + ",".join(map(str, query_vector)) + "]"
@@ -158,15 +160,16 @@ def find_candidate_shops(
     price_min = price_min if price_min is not None else price_min_default
     price_max = price_max if price_max is not None else price_max_default
 
+    # ±5% tolerance
     price_min = int(price_min * 0.95)
     price_max = int(price_max * 1.05)
 
     sql = """
         WITH ranked_products AS (
-                SELECT random_key, 1 - (embedding <=> %(query_vector)s::vector) AS similarity
-                FROM product_embed
-                ORDER BY embedding <=> %(query_vector)s::vector
-            )
+            SELECT random_key, 1 - (embedding <=> %(query_vector)s::vector) AS similarity
+            FROM product_embed
+            ORDER BY embedding <=> %(query_vector)s::vector
+        )
         SELECT 
             mt.persian_name AS product_name,
             mt.shop_id,
@@ -180,41 +183,40 @@ def find_candidate_shops(
             rp.similarity
         FROM ranked_products rp
         JOIN member_total mt ON rp.random_key = mt.base_random_key
-        WHERE 1=1
-            AND (%(has_warranty)s IS NULL OR mt.has_warranty = %(has_warranty)s)
-            AND (%(score)s IS NULL OR mt.score >= %(score)s)
-            AND (%(city_name)s IS NULL OR mt.city = %(city_name)s)
-            AND (%(brand_title)s IS NULL OR mt.brand_title = %(brand_title)s)
-            AND mt.price BETWEEN %(price_min)s AND %(price_max)s
-        ORDER BY rp.similarity DESC
-        LIMIT %(limit)s;
-        """
+        WHERE mt.price BETWEEN %(price_min)s AND %(price_max)s
+    """
 
-    params = {
+    params: Dict[str, Any] = {
         "query_vector": query_vector_str,
-        "has_warranty": has_warranty,
-        "score": score,
-        "city_name": city_name,
-        "brand_title": brand_title,
         "price_min": price_min,
         "price_max": price_max,
-        "limit": top_k,
     }
 
-    for k,v in params.items():
-        if v in ['Ignore']:
-            params[k] = None
+    # Dynamic filters
+    for key, value in filters.items():
+        if value is None or value == "Ignore":
+            continue
+
+        if key == "score":
+            sql += f" AND (%({key})s IS NULL OR mt.score >= %({key})s)"
+        else:
+            sql += f" AND (%({key})s IS NULL OR mt.{key} = %({key})s)"
+
+        params[key] = value
+
+    sql += " ORDER BY rp.similarity DESC LIMIT %(limit)s;"
+    params["limit"] = top_k
 
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
             cur.execute("SET enable_seqscan = off;")
             cur.execute("SET ivfflat.probes = %s;", (20,))
-
             cur.execute(sql, params)
-            results = cur.fetchall()
+            rows = cur.fetchall()
+
     results = [
         {
-            "product_name": row[0], 
+            "product_name": row[0],
             "shop_id": row[1],
             "price": row[2],
             "city_name": row[3],
@@ -224,7 +226,7 @@ def find_candidate_shops(
             "base_random_key": row[7],
             "member_random_key": row[8],
             "similarity": round(row[9], 4),
-         }
-        for row in results
+        }
+        for row in rows
     ]
     return results

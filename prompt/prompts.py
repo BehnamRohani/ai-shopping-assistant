@@ -150,15 +150,17 @@ execute_sql(query: str) -> list[RealDictRow]:
    Executes a PostgreSQL query and returns results.
    → Run SQL directly.
 """
-
 find_candidate_shops_tool = """
 Tool Name: find_candidate_shops
 
 Description:
 Use this tool to find up to top_k (default 3) candidate shops for a user query.
 It ranks products using semantic similarity of the Persian product name (via embeddings)
-and applies optional filters: warranty, shop score, city, brand, price range, and extra features.
-It always returns candidates even if some fields are None or 'Ignore'.
+and applies optional filters. Each filter is applied with the condition:
+`(param IS NULL OR condition)`, so if a parameter is None or 'Ignore', it is skipped.
+Special cases:
+- score → enforces `mt.score >= value`
+- price_min / price_max → applied with ±5% tolerance
 
 Inputs:
 - query (str): User's product description -> i.e., the product_name or more.
@@ -166,9 +168,14 @@ Inputs:
 - score (int or None): Minimum shop score. None or 'Ignore' = ignore.
 - city_name (str or None): Desired city. None or 'Ignore' = ignore.
 - brand_title (str or None): Desired brand. None or 'Ignore' = ignore.
+- shop_id (int or None): Optional filter by shop id. None or 'Ignore' = ignore.
+- base_random_key (str or None): Optional filter by base random key. None or 'Ignore' = ignore.
+- member_random_key (str or None): Optional filter by member random key. None or 'Ignore' = ignore.
 - price_min (int or None): Min price. None = ignore.
 - price_max (int or None): Max price. None = ignore.
 - top_k (int, default 3): Maximum number of candidate shops to return.
+* Or any other argument of member_total VIEW that can be used as a filter with sql script
+   -> "(value IS NULL OR mt.key = value)"
 
 Outputs:
 - List of dictionaries, each containing:
@@ -180,9 +187,17 @@ Outputs:
     - score (int)
     - extra_features (str)
     - base_random_key (str)
-    - member_random_key (str) <- member_random_keys list should be filled with this value at the end
+    - member_random_key (str)
     - similarity (float): embedding similarity to the query
+
+IMPORTANT:
+- The returned `shop_id` is for inspection check with user.
+- The returned `member_random_key` is for convinience.
+- During the conversation, this should be stored in `candidate_member`.
+- The `member_random_keys` list in the final ConversationResponse MUST remain NULL
+  until the user explicitly confirms a seller OR the flow reaches Turn 5.
 """
+
 
 SIMILARITY_SEARCH_NOTES = """
 ## Important: Interpreting similarity_search results
