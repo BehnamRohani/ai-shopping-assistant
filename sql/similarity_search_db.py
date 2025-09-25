@@ -134,12 +134,16 @@ def find_candidate_shops(
     price_min = int(price_min * 0.95)
     price_max = int(price_max * 1.05)
 
+    params: Dict[str, Any] = {
+        "query_vector": query_vector_str,
+        "price_min": price_min,
+        "price_max": price_max,
+    }
+
     sql = """
-        WITH ranked_products AS (
-            SELECT random_key, 1 - (embedding <=> %(query_vector)s::vector) AS similarity
-            FROM product_embed
-        )
+    WITH filtered AS (
         SELECT 
+            mt.base_random_key,
             mt.persian_name AS product_name,
             mt.shop_id,
             mt.price,
@@ -147,39 +151,42 @@ def find_candidate_shops(
             mt.has_warranty,
             mt.score,
             mt.extra_features,
-            mt.base_random_key,
-            mt.member_random_key,
-            rp.similarity
-        FROM ranked_products rp
-        JOIN member_total mt ON rp.random_key = mt.base_random_key
+            mt.member_random_key
+        FROM member_total mt
         WHERE mt.price BETWEEN %(price_min)s AND %(price_max)s
     """
-
-    params: Dict[str, Any] = {
-        "query_vector": query_vector_str,
-        "price_min": price_min,
-        "price_max": price_max,
-    }
-
-    # Dynamic filters
+    # dynamic filters appended here…
     for key, value in filters.items():
         if value is None or value == "Ignore":
             continue
-
         if key == "score":
             sql += f" AND (%({key})s IS NULL OR mt.score >= %({key})s)"
         else:
             sql += f" AND (%({key})s IS NULL OR mt.{key} = %({key})s)"
-
         params[key] = value
 
-    sql += " ORDER BY rp.similarity DESC LIMIT %(limit)s;"
+    sql += """
+        ),
+        ranked AS (
+            SELECT 
+                f.*,
+                1 - (pe.embedding <=> %(query_vector)s::vector) AS similarity
+            FROM filtered f
+            JOIN product_embed pe ON f.base_random_key = pe.random_key
+        )
+        SELECT *
+        FROM ranked
+        ORDER BY similarity DESC
+        LIMIT %(limit)s;
+    """
+
+    # sql += " LIMIT %(limit)s;"
     params["limit"] = top_k
 
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
-            cur.execute("SET enable_seqscan = off;")
-            cur.execute("SET ivfflat.probes = %s;", (50,))
+            # cur.execute("SET enable_seqscan = on;")
+            # cur.execute("SET ivfflat.probes = %s;", (20,))
             cur.execute(sql, params)
             rows = cur.fetchall()
 
