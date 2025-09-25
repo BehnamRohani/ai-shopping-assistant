@@ -603,6 +603,7 @@ class TorobHybridAgent(TorobAgentBase):
             prompt_prefix = f"Input ({chat_index}): " if scenario_label in ['CONVERSATION'] else "Input: "
             prompt += prompt_prefix + preprocessed_instruction
             # --- Step 3: Run the chosen scenario agent ---
+            print(message_history)
             result, agent_response = await scenario_agent.run(prompt, 
                                                               usage_limits=usage_limits, 
                                                               few_shot=few_shot,
