@@ -600,7 +600,8 @@ class TorobHybridAgent(TorobAgentBase):
                 prompt += "\n" + "The initial similarity search results are provided for convenience.\n"
 
             # Step 3: build prompt for shopping agent
-            prompt += "Input: " + preprocessed_instruction
+            prompt_prefix = f"Input ({chat_index}): " if scenario_label in ['CONVERSATION'] else "Input: "
+            prompt += prompt_prefix + preprocessed_instruction
             # --- Step 3: Run the chosen scenario agent ---
             result, agent_response = await scenario_agent.run(prompt, 
                                                               usage_limits=usage_limits, 
