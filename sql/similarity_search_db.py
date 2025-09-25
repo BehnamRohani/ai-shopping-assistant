@@ -107,7 +107,7 @@ import psycopg2
 
 def find_candidate_shops(
     query: str,
-    top_k: int = 3,
+    top_k: int = 1,
     price_min: Optional[int] = None,
     price_max: Optional[int] = None,
     **filters: Any,
