@@ -33,7 +33,7 @@ def create_member_total_view():
                 CREATE OR REPLACE VIEW member_total AS
                 SELECT 
                     bp.random_key AS base_random_key,
-                    bp.product_name,
+                    bp.persian_name,
                     bp.extra_features,
                     m.shop_id,
                     m.price,
