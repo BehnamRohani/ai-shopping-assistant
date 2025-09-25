@@ -110,7 +110,7 @@ def insert_chat(input_dict: dict, output_dict: dict, extra_info: dict = None):
     user_image_url = all_images[0] if all_images else None
     user_text = all_texts[0] if all_texts else None
 
-    finished = bool(output_dict.get("member_random_keys")) or output_dict.get("finished", False)
+    finished = output_dict.get("finished", False)
 
     base_id, chat_index = get_base_id_and_index(chat_id=chat_id)
 
@@ -122,7 +122,7 @@ def insert_chat(input_dict: dict, output_dict: dict, extra_info: dict = None):
         "user_image_url": user_image_url,
         "chat_index": chat_index,
         "model_text": output_dict.get("message"),
-        "model_image_url": user_image_url,
+        "model_image_url": None,
         "base_random_keys": json.dumps(output_dict.get("base_random_keys")),
         "member_random_keys": json.dumps(output_dict.get("member_random_keys")),
         "finished": finished,
@@ -363,14 +363,14 @@ def extract_sql(text: str) -> str:
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-def get_latest_chat(chat_id: str):
-    conn = psycopg2.connect(
-        **DB_CONFIG)
+def get_chat_history(chat_id: str):
+    conn = psycopg2.connect(**DB_CONFIG)
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # Step 1: get latest base_id for this chat_id
             cur.execute(
                 """
-                SELECT *
+                SELECT base_id
                 FROM chats
                 WHERE chat_id = %s
                 ORDER BY timestamp DESC
@@ -379,6 +379,22 @@ def get_latest_chat(chat_id: str):
                 (chat_id,)
             )
             row = cur.fetchone()
-            return dict(row) if row else None
+            if not row:
+                return []
+
+            latest_base_id = row["base_id"]
+
+            # Step 2: get full conversation for that base_id
+            cur.execute(
+                """
+                SELECT *
+                FROM chats
+                WHERE chat_id = %s AND base_id = %s
+                ORDER BY chat_index ASC;
+                """,
+                (chat_id, latest_base_id)
+            )
+            rows = cur.fetchall()
+            return [dict(r) for r in rows]
     finally:
         conn.close()
