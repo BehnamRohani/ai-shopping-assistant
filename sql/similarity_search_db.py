@@ -152,6 +152,7 @@ def find_candidate_shops(
             mt.score,
             mt.extra_features,
             mt.member_random_key
+            mt.brand_title
         FROM member_total mt
         WHERE mt.price BETWEEN %(price_min)s AND %(price_max)s
     """
@@ -159,6 +160,8 @@ def find_candidate_shops(
     for key, value in filters.items():
         if value is None or value == "Ignore":
             continue
+        if key=='has_warranty' and not value:
+            value = None
         if key == "score":
             sql += f" AND (%({key})s IS NULL OR mt.score >= %({key})s)"
         else:
@@ -201,7 +204,8 @@ def find_candidate_shops(
             "extra_features": row[6],
             "base_random_key": row[7],
             "member_random_key": row[8],
-            "similarity": round(row[9], 4) if row[9] is not None else None,
+            "brand_title": row[9],
+            "similarity": round(row[10], 4) if row[10] is not None else None,
         }
         for row in rows
     ]
