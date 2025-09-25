@@ -180,7 +180,7 @@ Outputs:
     - score (int)
     - extra_features (str)
     - base_random_key (str)
-    - member_random_key (str)
+    - member_random_key (str) <- member_random_keys list should be filled with this value at the end
     - similarity (float): embedding similarity to the query
 """
 
@@ -274,8 +274,7 @@ Final output must be a ConversationResponse object with:
     - True means the model is certain the output is final.
     - False means the assistant may still need follow-up interactions to finalize the answer. 
       OR the current interaction is the 5th one, in which you HAVE TO finalize your answer now.
-- plus the full state of all parameters:
-   - warranty, score, city, brand, price_range, product_name, product_features, shop_id, candidate_member_random_key.
+- plus the full state of all parameters (warranty, score, city, brand, price_range, product_name, product_features).
 ---
 
 ### Database Tables Available
@@ -292,17 +291,10 @@ Final output must be a ConversationResponse object with:
 - **None** = not set yet → MUST ask the user.  
 - **"Ignore"** = user explicitly said it doesn’t matter → do not ask again.  
 - **Price range** = treat flexibly. Use user’s range, or if a single price given, allow ±5%.  
+- **Not changeable**: has_warranty, score, city_name, brand_title, price_range (once set, do not override).  
+- **Updateable**: product_name (can evolve), product_features (appendable).  
 
-- has_warranty, score, city_name, brand_title, price_range, product_name, product_features, shop_id, candidate_member_random_key.  
-  • `shop_id` is used only for display and can be updated from tool results.  
-  • `candidate_member_random_key` is a temporary memory slot:  
-    - The agent may set this when a candidate shop is retrieved with `find_candidate_shops`.  
-    - It holds a possible `members.random_key`, but is **not final** until user explicitly confirms or the flow reaches Turn 5.  
-    - At finalization, the value of `candidate_member_random_key` is copied into `member_random_keys`.  
-
-- Parameters may be updated in two ways:  
-  1. From user messages (when the user specifies, confirms, or rejects information).  
-  2. From tool results (e.g., when `find_candidate_shops` returns a candidate, store its `shop_id` and `member_random_key` into `shop_id` and `candidate_member_random_key`).  
+NOTE: ONLY set a parameter if **user** said it or confirmed it in the turns.
 ---
 
 ### Conversation Flow Rules
@@ -364,7 +356,8 @@ Final output must be a ConversationResponse object with:
 ### MOST IMPORTANT CLARIFICATION
 - `member_random_key` (شناسه عضو) IS **NOT** EQUAL TO `shop_id` (شناسه فروشگاه).  
 - When finalized, you MUST output exactly one real random key from the `members.random_key` column.  
-- `shop_id` is only for display to the user, not for the JSON field.  
+- `shop_id` is only for display and confirmation with the user, not for the JSON field.  
+
 """
 
 image_label_examples = """
