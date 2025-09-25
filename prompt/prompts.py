@@ -154,7 +154,7 @@ find_candidate_shops_tool = """
 Tool Name: find_candidate_shops
 
 Description:
-Use this tool to find up to top_k (default 3) candidate shops for a user query.
+Use this tool to find up to top_k (default 1) candidate shops for a user query.
 It ranks products using semantic similarity of the Persian product name (via embeddings)
 and applies optional filters. Each filter is applied with the condition:
 `(param IS NULL OR condition)`, so if a parameter is None or 'Ignore', it is skipped.
@@ -173,7 +173,7 @@ Inputs:
 - member_random_key (str or None): Optional filter by member random key. None or 'Ignore' = ignore.
 - price_min (int or None): Min price. None = ignore.
 - price_max (int or None): Max price. None = ignore.
-- top_k (int, default 3): Maximum number of candidate shops to return.
+- top_k (int, default 1): Maximum number of candidate shops to return.
 * Or any other argument of member_total VIEW that can be used as a filter with sql script
    -> "(value IS NULL OR mt.key = value)"
 
