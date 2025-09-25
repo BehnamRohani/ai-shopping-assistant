@@ -188,8 +188,8 @@ def find_candidate_shops(
 
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
-            # cur.execute("SET enable_seqscan = on;")
-            # cur.execute("SET ivfflat.probes = %s;", (20,))
+            cur.execute("SET enable_seqscan = on;")
+            cur.execute("SET ivfflat.probes = %s;", (20,))
             cur.execute(sql, params)
             rows = cur.fetchall()
 

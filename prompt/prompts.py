@@ -176,7 +176,7 @@ Inputs:
 - member_random_key (str or None): Optional filter by member random key. None or 'Ignore' = ignore.
 - price_min (int or None): Min price. None = ignore.
 - price_max (int or None): Max price. None = ignore.
-- top_k (int, default 1): Maximum number of candidate shops to return.
+- top_k (int, default 3): Maximum number of candidate shops to return.
 * Or any other argument of member_total VIEW that can be used as a filter with sql script
    -> adding filtering conditions in form of "(value IS NULL OR mt.key = value)"
 
@@ -311,17 +311,17 @@ Final output: a ConversationResponse object with:
 
 **Turn 1**  
 - Extract parameters from input.  
-- Ask ALL missing ones together in one question.  
+- Ask ALL missing ones together in one question:
+-  'برای کمک به شما در پیدا کردن میز تحریر مناسب، لطفاً چند سوال دارم: آیا برند خاصی مد نظر دارید؟ آیا گارانتی برایتان مهم است؟ در کدام شهر می\u200cخواهید خرید کنید؟ حدود قیمت مورد نظر شما چقدر است؟ و آیا ویژگی خاصی مثل اندازه، رنگ یا جنس برایتان اهمیت دارد؟'
+- And also ask: "اسم دقیق محصول مورد نظر شما چیست؟ آیا چیزی در ذهن دارید؟"
 - Do NOT suggest candidates yet.  
 
 **Turns 2–4**  
 - Update parameters with user’s answers.  
-- Always ask for any still-missing fields. 
 - Use 'find_candidate_shops' to filter and get 3 candidate members. 
-- Or you may query the database directly using SQL via the `execute_sql` tool to suggest possible matches.  
 - Propose 3 candidates (shop-level) each turn, showing:  
-  نام محصول، شناسه فروشگاه، قیمت، شهر، گارانتی، امتیاز فروشنده، ویژگی‌ها.  
-- Ask: «آیا این فروشنده مناسب شماست؟ اگر بله، تلاش خواهم کرد تا عضو مورد نظر را پیدا کنم.»  
+  نام محصول، شناسه فروشگاه، قیمت، شهر، گارانتی، برند، امتیاز فروشنده، ویژگی‌ها.  
+- Ask: «آیا یکی از این فروشنده ها مناسب شماست؟ کدام؟ اگر بله، تلاش خواهم کرد تا عضو مورد نظر را پیدا کنم.»  
 - If the user explicitly confirms and you are certain it maps to a unique member, you may finalize early. Otherwise keep refining.
 
 **Turn 5**  
