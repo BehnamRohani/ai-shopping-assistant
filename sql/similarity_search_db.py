@@ -212,5 +212,20 @@ def find_candidate_shops(
 
             cur.execute(sql, params)
             results = cur.fetchall()
+    results = [
+        {
+            "product_name": row[0], 
+            "shop_id": row[1],
+            "price": row[2],
+            "city_name": row[3],
+            "has_warranty": row[4],
+            "score": row[5],
+            "extra_features": row[6],
+            "base_random_key": row[7],
+            "member_random_key": row[8],
+            "similarity": round(row[9], 4),
+         }
+        for row in results
+    ]
     print(results)
     return results
