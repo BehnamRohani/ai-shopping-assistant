@@ -151,7 +151,7 @@ def find_candidate_shops(
             mt.has_warranty,
             mt.score,
             mt.extra_features,
-            mt.member_random_key
+            mt.member_random_key,
             mt.brand_title
         FROM member_total mt
         WHERE mt.price BETWEEN %(price_min)s AND %(price_max)s
