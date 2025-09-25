@@ -209,4 +209,5 @@ def find_candidate_shops(
         }
         for row in rows
     ]
+    print(results)
     return results
