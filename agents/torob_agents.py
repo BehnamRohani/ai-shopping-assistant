@@ -608,7 +608,6 @@ class TorobHybridAgent(TorobAgentBase):
                                                               usage_limits=usage_limits, 
                                                               few_shot=few_shot,
                                                               message_history= message_history)
-            print(scenario_label)
             if scenario_label in ['CONVERSATION']:
                 current_messages = result.all_messages()
                 print(current_messages)
