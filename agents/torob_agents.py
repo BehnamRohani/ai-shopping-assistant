@@ -558,11 +558,11 @@ class TorobHybridAgent(TorobAgentBase):
                 scenario_label = class_out.classification
                 print(scenario_label)
             else:
+                scenario_label = 'CONVERSATION'
                 # history_text = "\n".join(
                 #     [f"Input No.({(i+1)}): {h['message']}\nResponse No.({(i+1)}): {h['response']}" for i,h in enumerate(history)]
                 # )
                 # print(history_text)
-                scenario_label = 'CONVERSATION'
                 # prompt += "Conversation history:\n" + history_text + "\n\n"
                 # if chat_index ==5:
                 #     prompt += "[IMPORTANT] This is the Fifth turn. Your response is the end of conversation. You must answer the user now definitively.\n"
@@ -608,6 +608,7 @@ class TorobHybridAgent(TorobAgentBase):
                                                               usage_limits=usage_limits, 
                                                               few_shot=few_shot,
                                                               message_history= message_history)
+            print(result.all_messages())
             if scenario_label in ['CONVERSATION']:
                 current_messages = result.all_messages()
                 save_history(current_messages, local_path)
