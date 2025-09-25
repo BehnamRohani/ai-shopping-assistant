@@ -126,7 +126,8 @@ def similarity_search_cat(query, top_k: int = 5, probes: int = 20):
                        c.title AS category,
                        1 - (p.embedding <=> %s) AS similarity
                 FROM product_embed p
-                JOIN categories c ON p.category_id = c.id
+                JOIN base_products bp ON p.random_key = bp.random_key
+                JOIN categories c ON bp.category_id = c.id
                 ORDER BY p.embedding <=> %s
                 LIMIT %s
             """, (query_vector_str, query_vector_str, top_k))
@@ -137,7 +138,6 @@ def similarity_search_cat(query, top_k: int = 5, probes: int = 20):
         {"product_name": row[0], "category": row[1], "similarity": round(row[2], 4)}
         for row in results
     ]
-
 
 def find_candidate_shops(
     query: str,
