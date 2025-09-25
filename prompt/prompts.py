@@ -294,8 +294,8 @@ Final output must be a ConversationResponse object with:
 
 ### Database Tables Available
 - member_total (a pre-joined view with all key fields)
-   - values: (base_random_key, persian_name, extra_features, shop_id, price, member_random_key, score, has_warranty, brand_title, city)
-
+   - Columns: (base_random_key, persian_name, extra_features, shop_id, price, member_random_key, score, has_warranty, brand_title, city)
+   - When calling `find_candidate_shops`, arguments MUST be one of these.
 ---
 
 ### Parameter Handling
