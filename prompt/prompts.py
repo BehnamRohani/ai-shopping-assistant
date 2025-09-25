@@ -278,12 +278,6 @@ Final output must be a ConversationResponse object with:
 ---
 
 ### Database Tables Available
-- base_products(random_key, persian_name, brand_id, extra_features, members)  
-- members(random_key, base_random_key, shop_id, price)  
-- shops(id, city_id, score, has_warranty)  
-- brands(id, title)  
-- categories(id, title)  
-- cities(id, name)
 - member_total (a pre-joined view with all key fields)
    - values: (base_random_key, persian_name, extra_features, shop_id, price, member_random_key, score, has_warranty, brand_title, city)
 
@@ -294,9 +288,16 @@ Final output must be a ConversationResponse object with:
 - **"Ignore"** = user explicitly said it doesn’t matter → do not ask again.  
 - **Price range** = treat flexibly. Use user’s range, or if a single price given, allow ±5%.  
 - **Not changeable**: has_warranty, score, city_name, brand_title, price_range (once set, do not override).  
-- **Updateable**: product_name (can evolve), product_features (appendable).  
+- **Updateable**: product_name, product_features
 
 NOTE: ONLY set a parameter if **user** said it or confirmed it in the turns.
+
+### Other Parameters
+- **Updateable**: shop_id, candidate_member  
+   - Use these fields to **store info** about the **last suggested seller** in turns 2–4.  
+   - These are **temporary suggestion fields**, meant only for showing candidates.  
+   - Even if `candidate_member` is set, the `member_random_keys` list **must stay NULL** until finalization.  
+   - This ensures `candidate_member`/`shop_id` are available -> lowering payload of calls to `find_candidate_shops`
 ---
 
 ### Conversation Flow Rules

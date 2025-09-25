@@ -67,6 +67,9 @@ class ConversationResponse(BaseModel):
 
     finished: Optional[bool] = False
 
+    shop_id: Optional[int] = None
+    candidate_member: Optional[str] = None
+
     # --- Not Changeable parameters ---
     has_warranty: Optional[bool] = None
     score: Optional[float] = None
@@ -569,12 +572,12 @@ class TorobHybridAgent(TorobAgentBase):
                         # Add extra info by now
             # message_history = None
             # local_path = ""
-            if scenario_label in ['CONVERSATION']:
+            if scenario_label in ['CONVERSATION'] and extra_info:
                 # local_path = history_folder  /  f"{base_id}.json"
                 # loaded_history = load_history(local_path)
                 # message_history =  ModelMessagesTypeAdapter.validate_python(loaded_history)
                 extra_info_text = "\n".join([f"{k} = {v}" for k,v in  extra_info.items()])
-                prompt += "Previous Parameters:" + "\n\n"  + extra_info_text + "\n\n"
+                prompt += f"Turn ({info_chat_index}) Parameters:" + "\n\n"  + extra_info_text + "\n\n"
 
             scenario_agent = TorobScenarioAgent(scenario_label)
             # Step 1: preprocess input
@@ -698,6 +701,8 @@ def normalize_to_shopping_response(output_obj: BaseModel) -> ShoppingResponse:
                     "price_range": output_obj.price_range,
                     "product_name": output_obj.product_name,
                     "product_features": output_obj.product_features,
+                    "candidate_member": output_obj.candidate_member,
+                    "shop_id": output_obj.shop_id,
                     }
         final_response['extra_info'] = extra_info
     return final_response
