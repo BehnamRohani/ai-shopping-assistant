@@ -21,6 +21,35 @@ DB_CONFIG = {
     "password": os.getenv("DB_PASSWORD"),
 }
 
+
+def create_member_total_view():
+    """
+    Create the member_total view combining base_products, members, shops, brands, and cities.
+    """
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            cur.execute("DROP VIEW IF EXISTS member_total CASCADE;")
+            cur.execute("""
+                CREATE OR REPLACE VIEW member_total AS
+                SELECT 
+                    bp.random_key AS base_random_key,
+                    bp.persian_name,
+                    bp.extra_features,
+                    m.shop_id,
+                    m.price,
+                    m.random_key AS member_random_key,
+                    s.score,
+                    s.has_warranty,
+                    b.title AS brand_title,
+                    ci.name AS city
+                FROM base_products bp
+                JOIN members m ON bp.random_key = m.base_random_key
+                JOIN shops s ON m.shop_id = s.id
+                JOIN brands b ON bp.brand_id = b.id
+                JOIN cities ci ON s.city_id = ci.id;
+                """)
+        conn.commit()
+
 # ------ Database Helpers ------
 def get_db_conn():
     return psycopg2.connect(**DB_CONFIG)

@@ -8,7 +8,7 @@ from fastapi import Request
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from sql.similarity_search_db import similarity_search
-from sql.sql_utils import init_logs_table, insert_log, insert_chat, get_latest_chat_history
+from sql.sql_utils import init_logs_table, insert_log, insert_chat, get_latest_chat_history, create_member_total_view
 from agents.torob_agents import TorobHybridAgent
 from pydantic_ai import UsageLimits
 
@@ -18,6 +18,8 @@ load_dotenv()
 OPENAI_API_KEY = os.environ['API_KEY']
 BASE_URL = os.environ['BASE_URL']
 MODEL_NAME = "gpt-4.1-mini"
+
+create_member_total_view()
 
 # ------ Lifespan Context ------
 from contextlib import asynccontextmanager
