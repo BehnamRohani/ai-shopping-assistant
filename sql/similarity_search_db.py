@@ -166,7 +166,6 @@ def find_candidate_shops(
                 SELECT random_key, 1 - (embedding <=> %(query_vector)s::vector) AS similarity
                 FROM product_embed
                 ORDER BY embedding <=> %(query_vector)s::vector
-                LIMIT 10000   -- fetch top 10000 first, not all
             )
         SELECT 
             mt.persian_name AS product_name,
@@ -208,6 +207,10 @@ def find_candidate_shops(
 
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
+            cur.execute("SET enable_seqscan = off;")
+            cur.execute("SET ivfflat.probes = %s;", (20,))
+
             cur.execute(sql, params)
             results = cur.fetchall()
+    print(results)
     return results
