@@ -166,7 +166,7 @@ Inputs:
 - query (str): User's product description -> i.e., the product_name or more.
 - has_warranty (bool or None): If user wants warranty. None or 'Ignore' = ignore.
 - score (int or None): Minimum shop score. None or 'Ignore' = ignore.
-- city_name (str or None): Desired city. None or 'Ignore' = ignore.
+- city (str or None): Desired city. None or 'Ignore' = ignore.
 - brand_title (str or None): Desired brand. None or 'Ignore' = ignore.
 - shop_id (int or None): Optional filter by shop id. None or 'Ignore' = ignore.
 - base_random_key (str or None): Optional filter by base random key. None or 'Ignore' = ignore.
@@ -302,7 +302,7 @@ Final output must be a ConversationResponse object with:
 - **None** = not set yet → MUST ask the user.  
 - **"Ignore"** = user explicitly said it doesn’t matter → do not ask again.  
 - **Price range** = treat flexibly. Use user’s range, or if a single price given, allow ±5%.  
-- **Not changeable**: has_warranty, score, city_name, brand_title, price_range (once set, do not override).  
+- **Not changeable**: has_warranty, score, city, brand_title, price_range (once set, do not override).  
 - **Updateable**: product_name, product_features
 
 NOTE: ONLY set a parameter if **user** said it or confirmed it in the turns.
@@ -337,7 +337,7 @@ NOTE: ONLY set a parameter if **user** said it or confirmed it in the turns.
 - In addition, ALWAYS propose one candidate shop (`LIMIT 1`) each turn.
 - To get candidates, use the `find_candidate_shops` tool/function:
   • query: user’s product description  
-  • has_warranty, score, city_name, brand_title, price_min, price_max, product_name  
+  • has_warranty, score, city, brand_title, price_min, price_max, product_name  
   • If user gave approximate single price, set price_min = price_max.  
 - The tool returns candidate shop(s) with:
   • `shop_id` (for user display)  
