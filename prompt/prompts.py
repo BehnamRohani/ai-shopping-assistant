@@ -284,6 +284,8 @@ Final output must be a ConversationResponse object with:
 - brands(id, title)  
 - categories(id, title)  
 - cities(id, name)
+- member_total (a pre-joined view with all key fields)
+   - values: (base_random_key, persian_name, extra_features, shop_id, price, member_random_key, score, has_warranty, brand_title, city)
 
 ---
 
@@ -326,14 +328,14 @@ NOTE: ONLY set a parameter if **user** said it or confirmed it in the turns.
   • `member_random_key` (for system use only when finalizing)  
 - Show at least these details in Persian to user:
   • نام محصول (persian_name)  
-  • شناسه فروشنده (shop_id)  
+  • شناسه فروشگاه (shop_id)  
   • قیمت (price)  
   • شهر (city)  
   • وضعیت گارانتی (has_warranty)  
   • امتیاز فروشنده (score)  
   • ویژگی‌ها (extra_features if available)  
 - End with:  
-  «آیا این فروشنده مناسب شماست یا مایلید اطلاعات بیشتری بدهید؟»
+  «آیا این فروشنده با شناسه <shop_id> مناسب شماست یا مایلید اطلاعات بیشتری بدهید؟»
 
 **Early Finalization in Turns 2–4**
 - If the user explicitly confirms that a candidate is correct, you may finalize immediately:

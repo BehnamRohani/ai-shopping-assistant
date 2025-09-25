@@ -186,7 +186,7 @@ def find_candidate_shops(
             AND (%(city_name)s IS NULL OR mt.city = %(city_name)s)
             AND (%(brand_title)s IS NULL OR mt.brand_title = %(brand_title)s)
             AND mt.price BETWEEN %(price_min)s AND %(price_max)s
-        ORDER BY rp.similarity DESC, mt.score DESC, mt.price ASC
+        ORDER BY rp.similarity DESC
         LIMIT %(limit)s;
         """
 
