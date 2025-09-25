@@ -157,7 +157,7 @@ find_candidate_shops_tool = """
 Tool Name: find_candidate_shops
 
 Description:
-Use this tool to find up to top_k (default 1) candidate shops for a user query.
+Use this tool to find up to top_k (default 3) candidate shops for a user query.
 It ranks products using semantic similarity of the Persian product name (via embeddings)
 and applies optional filters. Each filter is applied with the condition:
 `(param IS NULL OR condition)`, so if a parameter is None or 'Ignore', it is skipped.
@@ -178,7 +178,7 @@ Inputs:
 - price_max (int or None): Max price. None = ignore.
 - top_k (int, default 1): Maximum number of candidate shops to return.
 * Or any other argument of member_total VIEW that can be used as a filter with sql script
-   -> "(value IS NULL OR mt.key = value)"
+   -> adding filtering conditions in form of "(value IS NULL OR mt.key = value)"
 
 Outputs:
 - List of dictionaries, each containing:
@@ -198,7 +198,7 @@ IMPORTANT:
 - The returned `member_random_key` is for convinience.
 - During the conversation, this should be stored in `candidate_member`.
 - The `member_random_keys` list in the final ConversationResponse MUST remain NULL
-  until the user explicitly confirms a seller OR the flow reaches Turn 5.
+  until the user explicitly confirms a 'member' OR the flow reaches Turn 5.
 """
 
 
@@ -316,15 +316,16 @@ Final output: a ConversationResponse object with:
 
 **Turns 2–4**  
 - Update parameters with user’s answers.  
-- Always ask for any still-missing fields.  
-- You may query the database directly using SQL via the `execute_sql` tool to suggest possible matches.  
-- Propose 1 candidate (shop-level) each turn, showing:  
+- Always ask for any still-missing fields. 
+- Use 'find_candidate_shops' to filter and get 3 candidate members. 
+- Or you may query the database directly using SQL via the `execute_sql` tool to suggest possible matches.  
+- Propose 3 candidates (shop-level) each turn, showing:  
   نام محصول، شناسه فروشگاه، قیمت، شهر، گارانتی، امتیاز فروشنده، ویژگی‌ها.  
 - Ask: «آیا این فروشنده مناسب شماست؟ اگر بله، تلاش خواهم کرد تا عضو مورد نظر را پیدا کنم.»  
 - If the user explicitly confirms and you are certain it maps to a unique member, you may finalize early. Otherwise keep refining.
 
 **Turn 5**  
-- Must finalize. Use all confirmed parameters to query `member_total`.  
+- Must finalize. Use 'find_candidate_shops' on all confirmed parameters to filter and query `member_total`.  
 - Ensure exactly one `member_random_key` is selected.  
 - Output it in `member_random_keys` and set finished = true.  
 

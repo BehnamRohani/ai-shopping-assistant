@@ -400,8 +400,8 @@ class TorobConversationAgent(TorobAgentBase):
                 + "\n"
                 + SYSTEM_PROMPT_CONVERSATION
                 + "\nYou have access to the following tools:"
-                # + "\n"
-                # + find_candidate_shops_tool 
+                + "\n"
+                + find_candidate_shops_tool 
                 + "\n" + similarity_search_tool 
                 + "\n" + execute_query_tool
                 + "\nBelow is structure of data in database:"

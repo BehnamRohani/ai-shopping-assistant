@@ -107,7 +107,7 @@ import psycopg2
 
 def find_candidate_shops(
     query: str,
-    top_k: int = 1,
+    top_k: int = 3,
     price_min: Optional[int] = None,
     price_max: Optional[int] = None,
     **filters: Any,
@@ -179,7 +179,7 @@ def find_candidate_shops(
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
             cur.execute("SET enable_seqscan = off;")
-            cur.execute("SET ivfflat.probes = %s;", (20,))
+            cur.execute("SET ivfflat.probes = %s;", (50,))
             cur.execute(sql, params)
             rows = cur.fetchall()
 
