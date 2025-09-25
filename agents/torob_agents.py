@@ -15,6 +15,30 @@ from sql.sql_utils import get_chat_history, get_base_id_and_index
 from utils.utils import preprocess_persian
 from sql.sql_utils import load_extra_info
 from utils.utils import extract_media_type_and_bytes
+from pydantic_core import to_jsonable_python
+from pydantic_ai.messages import ModelMessagesTypeAdapter  
+import json
+from pathlib import Path
+
+history_folder = Path("../history")
+history_folder.mkdir(parents=True, exist_ok=True)
+
+def save_history(messages, path: str = "chat_history.json"):
+    """Serialize agent messages to disk as JSON"""
+    as_python_objects = to_jsonable_python(messages)
+    Path(path).write_text(
+        json.dumps(as_python_objects, ensure_ascii=False, indent=2),
+        encoding="utf-8"
+    )
+
+def load_history(path: str = "chat_history.json"):
+    """Load messages back into ModelMessages. Return [] if file doesn't exist."""
+    file_path = Path(path)
+    if not file_path.exists():
+        return []
+    
+    raw = json.loads(file_path.read_text(encoding="utf-8"))
+    return ModelMessagesTypeAdapter.validate_python(raw)
 
 # ------------------------
 # Load environment
@@ -213,7 +237,8 @@ class TorobAgentBase:
         input_text: str,
         image_b64: str = None,
         usage_limits: Optional[UsageLimits] = None,
-        few_shot: int = 0    # NEW
+        few_shot: int = 0,    # NEW
+        **kwargs
     ):
         # Prepend few-shot examples if requested
         if few_shot > 0 and self.examples:
@@ -229,9 +254,11 @@ class TorobAgentBase:
         else:
             user_message = input_text
         if usage_limits:
-            result = await self.agent.run(user_message, usage_limits=usage_limits)
+            result = await self.agent.run(user_message, 
+                                          usage_limits=usage_limits,
+                                          **kwargs)
         else:
-            result = await self.agent.run(user_message)
+            result = await self.agent.run(user_message, **kwargs)
         return result, result.output
 
 class TorobClassifierAgent(TorobAgentBase):
@@ -522,28 +549,32 @@ class TorobHybridAgent(TorobAgentBase):
             base_id, chat_index = get_base_id_and_index(chat_id)   # your existing function
             history = get_chat_history(base_id)[-4:]
             info_chat_index = max(1,chat_index-1)
-            extra_info = load_extra_info(base_id, info_chat_index)
+            # extra_info = load_extra_info(base_id, info_chat_index)
 
-            # --- Step 2: Determine scenario ---
+            # # --- Step 2: Determine scenario ---
             if not history:
                 classifier_agent = TorobClassifierAgent()
                 _, class_out = await classifier_agent.run(instruction, usage_limits=usage_limits)
                 scenario_label = class_out.classification
                 print(scenario_label)
             else:
-                history_text = "\n".join(
-                    [f"Input No.({(i+1)}): {h['message']}\nResponse No.({(i+1)}): {h['response']}" for i,h in enumerate(history)]
-                )
-                print(history_text)
+                # history_text = "\n".join(
+                #     [f"Input No.({(i+1)}): {h['message']}\nResponse No.({(i+1)}): {h['response']}" for i,h in enumerate(history)]
+                # )
+                # print(history_text)
                 scenario_label = 'CONVERSATION'
-                prompt += "Conversation history:\n" + history_text + "\n\n"
-                if chat_index ==5:
-                    prompt += "[IMPORTANT] This is the Fifth turn. Your response is the end of conversation. You must answer the user now definitively.\n"
-                        # Add extra info by now
-            
+                # prompt += "Conversation history:\n" + history_text + "\n\n"
+                # if chat_index ==5:
+                #     prompt += "[IMPORTANT] This is the Fifth turn. Your response is the end of conversation. You must answer the user now definitively.\n"
+                #         # Add extra info by now
+            message_history = None
+            local_path = history_folder
             if scenario_label in ['CONVERSATION']:
-                extra_info_text = "\n".join([f"{k} = {v}" for k,v in  extra_info.items()])
-                prompt += "Previous Parameters:" + "\n\n"  + extra_info_text + "\n\n"
+                local_path += f"/{base_id}.json"
+                loaded_history = load_history(local_path)
+                message_history =  ModelMessagesTypeAdapter.validate_python(loaded_history)
+                # extra_info_text = "\n".join([f"{k} = {v}" for k,v in  extra_info.items()])
+                # prompt += "Previous Parameters:" + "\n\n"  + extra_info_text + "\n\n"
 
             scenario_agent = TorobScenarioAgent(scenario_label)
             # Step 1: preprocess input
@@ -571,7 +602,13 @@ class TorobHybridAgent(TorobAgentBase):
             # Step 3: build prompt for shopping agent
             prompt += "Input: " + preprocessed_instruction
             # --- Step 3: Run the chosen scenario agent ---
-            result, agent_response = await scenario_agent.run(prompt, usage_limits=usage_limits, few_shot=few_shot)
+            result, agent_response = await scenario_agent.run(prompt, 
+                                                              usage_limits=usage_limits, 
+                                                              few_shot=few_shot,
+                                                              message_history= message_history)
+            if scenario_label in ['CONVERSATION']:
+                current_messages = result.all_messages()
+                save_history(current_messages, local_path)
             # --- Step 4: Normalize output ---
             output_dict = normalize_to_shopping_response(agent_response)
             return result, output_dict
