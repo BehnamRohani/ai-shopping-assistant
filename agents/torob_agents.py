@@ -49,6 +49,8 @@ class ConversationResponse(BaseModel):
     city_name: Optional[str] = None
     brand_title: Optional[str] = None
     price_range: Optional[str] = None
+    shop_id: Optional[int] = None
+    candidate_member_random_key: Optional[int] = None
 
     # --- Updateable parameters ---
     product_name: Optional[str] = None
@@ -658,6 +660,8 @@ def normalize_to_shopping_response(output_obj: BaseModel) -> ShoppingResponse:
                     "price_range": output_obj.price_range,
                     "product_name": output_obj.product_name,
                     "product_features": output_obj.product_features,
+                    "shop_id": output_obj.shop_id,
+                    "candidate_member_random_key": output_obj.candidate_member_random_key,
                     }
         final_response['extra_info'] = extra_info
     return final_response

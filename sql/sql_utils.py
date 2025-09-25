@@ -175,7 +175,8 @@ def load_extra_info(base_id: int, index_chat: int) -> dict:
             "price_range": None,
             "product_name": None,
             "shop_id": None,
-            "product_features": None
+            "product_features": None,
+            "candidate_member_random_key": None,
             }
     finally:
         cur.close()
