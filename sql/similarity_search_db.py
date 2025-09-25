@@ -97,16 +97,20 @@ def similarity_search(query, top_k: int = 5, probes: int = 20):
 
     return results
 
-def similarity_search_cat(query, top_k: int = 5):
+def similarity_search_cat(query, top_k: int = 5, probes: int = 20):
     """
-    Perform a similarity search in the categories table using pgvector.
+    Perform a similarity search in the product_embed table, and return 
+    product names with their corresponding categories.
 
     Args:
         query (str): The query text.
-        top_k (int): Number of similar items to return.
+        top_k (int): Number of similar products to return.
+        probes (int): Number of IVF lists to probe.
 
     Returns:
-        title
+        List[Dict]: [
+            {"product_name": str, "category": str, "similarity": float}, ...
+        ]
     """
     query_vector = get_embedding(query)  # list[float]
     query_vector_str = "[" + ",".join(map(str, query_vector)) + "]"
@@ -114,18 +118,26 @@ def similarity_search_cat(query, top_k: int = 5):
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
             # Force use of IVFFlat index
-            cur.execute("SET enable_seqscan = on;")
+            cur.execute("SET enable_seqscan = off;")
+            cur.execute("SET ivfflat.probes = %s;", (probes,))
 
             cur.execute("""
-                SELECT title,
-                       1 - (embedding <=> %s) AS similarity
-                FROM categories
-                ORDER BY embedding <=> %s
+                SELECT p.persian_name,
+                       c.title AS category,
+                       1 - (p.embedding <=> %s) AS similarity
+                FROM product_embed p
+                JOIN categories c ON p.category_id = c.id
+                ORDER BY p.embedding <=> %s
                 LIMIT %s
             """, (query_vector_str, query_vector_str, top_k))
+
             results = cur.fetchall()
 
-    return results
+    return [
+        {"product_name": row[0], "category": row[1], "similarity": round(row[2], 4)}
+        for row in results
+    ]
+
 
 def find_candidate_shops(
     query: str,
