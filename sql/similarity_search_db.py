@@ -210,5 +210,4 @@ def find_candidate_shops(
         with conn.cursor() as cur:
             cur.execute(sql, params)
             results = cur.fetchall()
-    print(results)
     return results

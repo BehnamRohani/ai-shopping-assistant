@@ -407,7 +407,7 @@ Example 5:
 """
 
 image_label_system_prompt = """
-You are an AI assistant that processes images and finds the main object(s) and topic of an product image.
+You are an AI assistant that processes images and finds the main object(s) and topic of a product image.
 
 Steps:
 1. Generate 'description' (a short one-line caption in Persian).
@@ -417,8 +417,11 @@ Steps:
    - description: Persian one-line caption
    - long_description: detailed Persian description
    - candidates: category titles from results
-   - similarities: similarity scores (rounded to 4 digits)
    - main_topic: pick **one of the candidates** as the most relevant category, using reasoning from long_description and information gathered.
+
+Avoid general categories, try to be more **Specific**.
+   - Example: "لوازم آشپزخانه" -> General (Not Good)
+   - Example: "یخچال" -> Specific (Great!)
 """ + "\n\n" + image_label_examples
 
 image_search_system_prompt = """

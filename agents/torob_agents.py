@@ -164,9 +164,7 @@ class ImageTaskClassificationResponse(BaseModel):
 class ImageResponseTopic(BaseModel):
     description: Optional[str] = None
     long_description: Optional[str] = None
-    candidate_names: Optional[List[str]] = None
-    candidates_category: Optional[List[str]] = None
-    similarities: Optional[List[float]] = None
+    candidates: Optional[List[str]] = None
     main_topic: Optional[str] = None
 
 class ImageResponseSearch(BaseModel):
@@ -392,18 +390,18 @@ import pickle
 class TorobImageClassifierAgent(TorobAgentBase):
     def __init__(self):
         # Load category labels from pickle
-        with open("categories_by_level.pkl", "rb") as f:
-            loaded_levels = pickle.load(f)
-        labels_quotes = [f"Level {lvl}: {cats}" "\n" for lvl, cats in loaded_levels.items()]
+        # with open("categories_by_level.pkl", "rb") as f:
+        #     loaded_levels = pickle.load(f)
+        # labels_quotes = [f"Level {lvl}: {cats}" "\n" for lvl, cats in loaded_levels.items()]
 
-        image_system_prompt = image_label_system_prompt + "\n\nCategories:" + "\n".join(labels_quotes)
+        # image_system_prompt = image_label_system_prompt + "\n\nCategories:" + "\n".join(labels_quotes)
 
         super().__init__(
             name="TorobImageClassifierAgent",
             model_name=os.getenv("IMAGE_MODEL"),
-            system_prompt=image_system_prompt,
+            system_prompt=image_label_system_prompt,
             output_type=ImageResponseTopic,
-            # tools=[],
+            tools=[similarity_search_cat],
         )
 
 
@@ -482,8 +480,6 @@ class TorobHybridAgent(TorobAgentBase):
 
         # Initialize specialized agents
         self.image_agent_classifier = TorobImageTaskClassifierAgent()
-        self.image_agent_label = TorobImageClassifierAgent()
-        self.image_agent_search = TorobImageSearchAgent()
 
     async def run(self, input_dict: dict, usage_limits: Optional[Any] = None, 
                   use_initial_similarity_search: bool = True):
