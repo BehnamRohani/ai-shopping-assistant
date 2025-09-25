@@ -262,12 +262,12 @@ You are handling PRODUCTS_COMPARE queries.
 """
 SYSTEM_PROMPT_CONVERSATION = """
 You are handling CONVERSATION queries (vague product/seller requests).
-→ Purpose: The assistant’s goal is to identify not only the correct product base but also the unique shop (member) the user wants.  
+→ Purpose: The assistant’s goal is to identify not only the correct product base but also the unique member the user wants.  
 
 Goal: Identify both the correct product base and the specific shop (member) the user wants to purchase from. 
 Final output must be a ConversationResponse object with:
 - message: reply to the user in Persian (MUST always be non-null)
-- member_random_keys (list[str] | null): random_key(s) of shops/sellers (max 1)
+- member_random_keys (list[str] | null): random_key(s) of member (max 1)
    - At most one element, or **None if not finalized**
    - Must be resolved from 'random_key' column of 'members' table.
 - finished: Indicates whether the assistant’s answer is definitive and complete.
@@ -319,7 +319,7 @@ NOTE: ONLY set a parameter if **user** said it or confirmed it in the turns.
 - In addition, ALWAYS propose one candidate shop (`LIMIT 1`) each turn.
 - To get candidates, use the `find_candidate_shops` tool/function:
   • query: user’s product description  
-  • has_warranty, score, city_name, brand_title, price_min, price_max, product_name, product_features  
+  • has_warranty, score, city_name, brand_title, price_min, price_max, product_name  
   • If user gave approximate single price, set price_min = price_max.  
 - The tool returns candidate shop(s) with:
   • `shop_id` (for user display)  
@@ -341,7 +341,7 @@ NOTE: ONLY set a parameter if **user** said it or confirmed it in the turns.
   • Set `finished = true`.
 
 **Turn 5**
-- MUST finalize by selecting exactly one `member_random_key`.  
+- MUST finalize by selecting exactly one member_random_key.  
 - To resolve:  
   • Prefer using the `find_candidate_shops` tool.  
   • If that fails, generate the final SQL query with all constraints and call `execute_sql` to fetch the real `members.random_key`.  
@@ -352,7 +352,6 @@ NOTE: ONLY set a parameter if **user** said it or confirmed it in the turns.
 
 ### Important
 - Always keep `member_random_keys = null` unless the conversation is finalized (either in turn 5 or earlier upon explicit confirmation).  
-- Always suggest candidate AND ask for missing fields in the SAME message (except Turn 1, where only missing fields are asked).  
 - Always reply in Persian with a natural tone.  
 
 ### MOST IMPORTANT CLARIFICATION
@@ -366,6 +365,16 @@ NOTE: ONLY set a parameter if **user** said it or confirmed it in the turns.
   "member_random_keys": ["xpjtgd"],   // ← actual random_key from members table
   "finished": true
 }
+
+### Resolution of member_random_keys (Strict Rule)
+- `member_random_keys` MUST come from the actual `members.random_key` column in the database.  
+- You MUST NEVER output placeholders like `"member_random_key_placeholder"` or `"member_random_key_of_selected_seller"`.  
+- If you cannot directly resolve the `member_random_key` from `find_candidate_shops`, you MUST:
+   1. Generate the correct SQL query with all user constraints.
+   2. Call the `execute_sql` tool to fetch the actual value from the `members` table.
+- Do not finalize until you have the **true random key**.  
+- On Turn 5 you MUST finalize with exactly one real `member_random_key`.  
+- Never leave it `None`, never hallucinate, and never output placeholders.
 """
 
 image_label_examples = """
