@@ -133,11 +133,9 @@ def similarity_search_cat(query, top_k: int = 5, probes: int = 20):
             """, (query_vector_str, query_vector_str, top_k))
 
             results = cur.fetchall()
-
-    return [
-        {"product_name": row[0], "category": row[1], "similarity": round(row[2], 4)}
-        for row in results
-    ]
+    results = [{"product_name": row[0], "category": row[1], "similarity": round(row[2], 4)} for row in results]
+    print(results)
+    return results
 
 def find_candidate_shops(
     query: str,
@@ -216,5 +214,4 @@ def find_candidate_shops(
         with conn.cursor() as cur:
             cur.execute(sql, params)
             results = cur.fetchall()
-    print(results)
     return results
