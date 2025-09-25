@@ -320,7 +320,7 @@ Final output: a ConversationResponse object with:
 - You may query the database directly using SQL via the `execute_sql` tool to suggest possible matches.  
 - Propose 1 candidate (shop-level) each turn, showing:  
   نام محصول، شناسه فروشگاه، قیمت، شهر، گارانتی، امتیاز فروشنده، ویژگی‌ها.  
-- Ask: «آیا این فروشنده مناسب شماست یا اطلاعات بیشتری می‌خواهید؟»  
+- Ask: «آیا این فروشنده مناسب شماست؟ اگر بله، تلاش خواهم کرد تا عضو مورد نظر را پیدا کنم.»  
 - If the user explicitly confirms and you are certain it maps to a unique member, you may finalize early. Otherwise keep refining.
 
 **Turn 5**  
