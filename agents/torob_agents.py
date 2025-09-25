@@ -521,7 +521,7 @@ class TorobHybridAgent(TorobAgentBase):
             chat_id = input_dict["chat_id"]
             base_id, chat_index = get_base_id_and_index(chat_id)   # your existing function
             history = get_chat_history(base_id)[-4:]
-            info_chat_index = min(1,chat_index-1)
+            info_chat_index = max(1,chat_index-1)
             extra_info = load_extra_info(base_id, info_chat_index)
 
             # --- Step 2: Determine scenario ---

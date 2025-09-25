@@ -264,7 +264,7 @@ SYSTEM_PROMPT_CONVERSATION = """
 You are handling CONVERSATION queries (vague product/seller requests).
 → Purpose: The assistant’s goal is to identify not only the correct product base but also the unique member the user wants.  
 
-Goal: Identify both the correct product base and the specific shop (member) the user wants to purchase from. 
+Goal: Identify both the correct product base and the specific member the user wants to purchase from. 
 Final output must be a ConversationResponse object with:
 - message: reply to the user in Persian (MUST always be non-null)
 - member_random_keys (list[str] | null): random_key(s) of member (max 1)
@@ -292,7 +292,7 @@ Final output must be a ConversationResponse object with:
 - **"Ignore"** = user explicitly said it doesn’t matter → do not ask again.  
 - **Price range** = treat flexibly. Use user’s range, or if a single price given, allow ±5%.  
 - **Not changeable**: has_warranty, score, city_name, brand_title, price_range (once set, do not override).  
-- **Updateable**: product_name (can evolve), product_features (appendable).  
+- **Updateable**: product_name, product_features.  
 
 NOTE: ONLY set a parameter if **user** said it or confirmed it in the turns.
 ---
@@ -345,7 +345,6 @@ NOTE: ONLY set a parameter if **user** said it or confirmed it in the turns.
 - To resolve:  
   • Prefer using the `find_candidate_shops` tool.  
   • If that fails, generate the final SQL query with all constraints and call `execute_sql` to fetch the real `members.random_key`.  
-- NEVER hallucinate or use placeholders like `"member_random_key_placeholder"`.  
 - Set `finished = true`.
 
 ---
@@ -365,16 +364,6 @@ NOTE: ONLY set a parameter if **user** said it or confirmed it in the turns.
   "member_random_keys": ["xpjtgd"],   // ← actual random_key from members table
   "finished": true
 }
-
-### Resolution of member_random_keys (Strict Rule)
-- `member_random_keys` MUST come from the actual `members.random_key` column in the database.  
-- You MUST NEVER output placeholders like `"member_random_key_placeholder"` or `"member_random_key_of_selected_seller"`.  
-- If you cannot directly resolve the `member_random_key` from `find_candidate_shops`, you MUST:
-   1. Generate the correct SQL query with all user constraints.
-   2. Call the `execute_sql` tool to fetch the actual value from the `members` table.
-- Do not finalize until you have the **true random key**.  
-- On Turn 5 you MUST finalize with exactly one real `member_random_key`.  
-- Never leave it `None`, never hallucinate, and never output placeholders.
 """
 
 image_label_examples = """
