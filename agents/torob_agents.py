@@ -608,9 +608,10 @@ class TorobHybridAgent(TorobAgentBase):
                                                               usage_limits=usage_limits, 
                                                               few_shot=few_shot,
                                                               message_history= message_history)
-            print(result.all_messages())
+            print(scenario_label)
             if scenario_label in ['CONVERSATION']:
                 current_messages = result.all_messages()
+                print(current_messages)
                 save_history(current_messages, local_path)
             # --- Step 4: Normalize output ---
             output_dict = normalize_to_shopping_response(agent_response)
