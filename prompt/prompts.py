@@ -191,6 +191,7 @@ Outputs:
     - extra_features (str)
     - base_random_key (str)
     - member_random_key (str)
+    - brand_title (str)
     - similarity (float): embedding similarity to the query
 
 IMPORTANT:
