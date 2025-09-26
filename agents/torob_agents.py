@@ -44,7 +44,6 @@ def load_history(path: str = "chat_history.json"):
 # Load environment
 # ------------------------
 load_dotenv()
-
 top_features = top_features_summary()
 print(top_features)
 
