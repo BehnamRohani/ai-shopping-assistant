@@ -742,7 +742,7 @@ def normalize_to_shopping_response(output_obj: BaseModel) -> ShoppingResponse:
     elif isinstance(output_obj, ImageResponseAll):
         final_response = ShoppingResponse(
             message=output_obj.main_topic,
-            base_random_keys=output_obj.top_candidate,
+            base_random_keys=[output_obj.top_candidate],
             member_random_keys=None,
             finished=True  # optional, default True
         )
