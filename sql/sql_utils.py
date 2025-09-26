@@ -21,10 +21,11 @@ DB_CONFIG = {
     "password": os.getenv("DB_PASSWORD"),
 }
 
-
 def create_member_total_view():
     """
-    Create the member_total view combining base_products, members, shops, brands, and cities.
+    Create the member_total view combining base_products, members, shops, brands, cities,
+    and extra_features_products (feature_key, feature_value).
+    Ensures all members are preserved, even if brand, shop, or city is missing.
     """
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
@@ -41,13 +42,16 @@ def create_member_total_view():
                     s.score,
                     s.has_warranty,
                     b.title AS brand_title,
-                    ci.name AS city
-                FROM base_products bp
-                JOIN members m ON bp.random_key = m.base_random_key
-                JOIN shops s ON m.shop_id = s.id
-                JOIN brands b ON bp.brand_id = b.id
-                JOIN cities ci ON s.city_id = ci.id;
-                """)
+                    ci.name AS city,
+                    ef.feature_key,
+                    ef.feature_value
+                FROM members m
+                JOIN base_products bp ON bp.random_key = m.base_random_key
+                LEFT JOIN shops s ON m.shop_id = s.id
+                LEFT JOIN brands b ON bp.brand_id = b.id
+                LEFT JOIN cities ci ON s.city_id = ci.id
+                LEFT JOIN extra_features_products ef ON bp.random_key = ef.random_key;
+            """)
         conn.commit()
 
 # ------ Database Helpers ------

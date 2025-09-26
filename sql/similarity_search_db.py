@@ -170,6 +170,7 @@ import psycopg2
 from typing import Optional, List, Dict, Any
 import psycopg2
 
+
 def find_candidate_shops(
     query: str,
     top_k: int = 1,
@@ -182,6 +183,8 @@ def find_candidate_shops(
     shop_id: Optional[int] = None,
     base_random_key: Optional[str] = None,
     member_random_key: Optional[str] = None,
+    feature_keys: Optional[List[str]] = None,
+    feature_values: Optional[List[str]] = None,
 ) -> List[dict]:
     """
     Returns up to `top_k` candidate shops for a user query.
@@ -190,6 +193,7 @@ def find_candidate_shops(
     - Special cases:
         * score → mt.score >= %(score)s
         * price_min/price_max → BETWEEN with ±5% tolerance
+        * feature_keys/feature_values → filter by key-value pairs in extra_features_products
     """
 
     # Convert query to embedding
@@ -209,6 +213,7 @@ def find_candidate_shops(
         "query_vector": query_vector_str,
         "price_min": price_min,
         "price_max": price_max,
+        "limit": top_k,
     }
 
     sql = """
@@ -223,12 +228,12 @@ def find_candidate_shops(
             mt.score,
             mt.extra_features,
             mt.member_random_key,
-            mt.brand_title
+            mt.brand_title,
         FROM member_total mt
         WHERE mt.price BETWEEN %(price_min)s AND %(price_max)s
     """
 
-    # Apply filters explicitly
+    # Apply basic filters
     filters = {
         "has_warranty": has_warranty,
         "score": score,
@@ -250,6 +255,21 @@ def find_candidate_shops(
             sql += f" AND (%({key})s IS NULL OR mt.{key} = %({key})s)"
         params[key] = value
 
+    # Apply feature filters
+    if feature_keys and feature_values and len(feature_keys) == len(feature_values):
+        for i, (fk, fv) in enumerate(zip(feature_keys, feature_values)):
+            sql += f"""
+                AND EXISTS (
+                    SELECT 1
+                    FROM member_total mt2
+                    WHERE mt2.base_random_key = mt.base_random_key
+                      AND mt2.feature_key = %(feature_key_{i})s
+                      AND mt2.feature_value = %(feature_value_{i})s
+                )
+            """
+            params[f"feature_key_{i}"] = fk
+            params[f"feature_value_{i}"] = fv
+
     sql += """
         ),
         ranked AS (
@@ -261,11 +281,9 @@ def find_candidate_shops(
         )
         SELECT *
         FROM ranked
-        ORDER BY similarity DESC
+        ORDER BY similarity DESC, f.score DESC, f.price ASC
         LIMIT %(limit)s;
     """
-
-    params["limit"] = top_k
 
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
@@ -275,20 +293,20 @@ def find_candidate_shops(
             rows = cur.fetchall()
 
     results = [
-        {
-            "product_name": row[0],
-            "shop_id": row[1],
-            "price": row[2],
-            "city_name": row[3],
-            "has_warranty": row[4],
-            "score": row[5],
-            "extra_features": row[6],
-            "base_random_key": row[7],
+        {   
+            "base_random_key": row[0],
+            "product_name": row[1],
+            "shop_id": row[2],
+            "price": row[3],
+            "city": row[4],
+            "has_warranty": row[5],
+            "score": row[6],
+            "extra_features": row[7],
             "member_random_key": row[8],
             "brand_title": row[9],
-            "similarity": round(row[10], 4) if row[10] is not None else None,
+            "similarity": round(row[10], 4) if row[12] is not None else None,
         }
         for row in rows
     ]
-    print(results)
     return results
+

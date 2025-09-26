@@ -10,30 +10,7 @@ You are an AI Shopping Assistant for Torob. Your job is to answer user instructi
 schema_prompt = """
 We have data from torob.com structured in multiple tables. Below is a detailed description of each table and its columns:
 
-1. Table: searches
-- id: Unique identifier for each search result page. Used to connect logs like views and clicks to this search.
-- uid: Unique identifier for the entire search session (same across all pages of a search; equals id of page 0).
-- query: The search phrase entered by the user.
-- page: Page number in search results (starts from 0).
-- timestamp: Exact UTC time when the search was logged.
-- session_id: Identifier of the user’s session.
-- result_base_product_rks: A string (list encoded in string) of base product random keys shown in the results.
-- category_id: ID of the category user restricted the search to (0 means no category).
-- category_brand_boosts: A string (list encoded in string) of categories/brands boosted in ranking for this search.
-
-2. Table: base_views
-- id: Unique identifier for each product base view.
-- search_id: The search page ID this view came from (links to searches.id).
-- base_product_rk: Random key of the base product that was viewed.
-- timestamp: Exact UTC time when the view was logged.
-
-3. Table: final_clicks
-- id: Unique identifier for each final click.
-- base_view_id: ID linking this click to a base product view (links to base_views.id).
-- shop_id: Identifier of the shop where the clicked product belongs.
-- timestamp: Exact UTC time when the click occurred.
-
-4. Table: base_products
+1. Table: base_products
 - random_key: Unique identifier of a base product.
 - persian_name: Persian name of the product.
 - english_name: English name of the product.
@@ -44,30 +21,36 @@ Example: Features may be width (عرض), height (ارتفاع), size (انداز
 - image_url: URL of the product’s image.
 - members: A string (list encoded in string) of random keys of shop products linked to this base product.
 
-5. Table: members (shop products)
+2. Table: members (shop products)
 - random_key: Unique identifier of a product in a shop.
 - base_random_key: Random key linking the shop product to its base product.
 - shop_id: Identifier of the shop offering the product.
 - price: Price of the product in this shop.
 
-6. Table: shops
+3. Table: shops
 - id: Unique identifier of the shop.
 - city_id: ID of the city where the shop is located.
 - score: Shop’s rating in Torob (0 to 5).
 - has_warranty: Boolean indicating whether the shop has Torob warranty.
 
-7. Table: categories
+4. Table: categories
 - id: Unique identifier of the category.
 - title: Title of the category.
 - parent_id: ID of the parent category (-1 if no parent). Categories are hierarchical.
 
-8. Table: brands
+5. Table: brands
 - id: Unique identifier of the brand.
 - title: Title of the brand.
 
-9. Table: cities
+6. Table: cities
 - id: Unique identifier of the city.
 - name: Name of the city.
+
+7. Table: extra_features_products
+- random_key: Random key of the base product (links to base_products.random_key).
+- feature_key: Key of the feature (e.g., width, height, size, color, material, originality, stock_status, meterage, piece_count, power, etc.).
+- feature_value: Value of the feature (stored as text, e.g., "120cm", "red", "yes", "in stock").
+**This table stores the additional features of base products in a normalized key–value form, extracted from the extra_features JSON in base_products.**
 """
 
 input_classification_sys_prompt = """
@@ -153,6 +136,7 @@ execute_sql(query: str) -> list[RealDictRow]:
    Executes a PostgreSQL query and returns results.
    → Run SQL directly.
 """
+
 find_candidate_shops_tool = """
 Tool Name: find_candidate_shops
 
@@ -164,6 +148,8 @@ and applies optional filters. Each filter is applied with the condition:
 Special cases:
 - score → enforces `mt.score >= value`
 - price_min / price_max → BETWEEN with ±5% tolerance
+- feature_keys & feature_values → applied as ANDed pairs:
+  each (key, value) must exist in the product’s extra_features.
 
 Inputs:
 - query (str): User's product description -> i.e., the product_name or more.
@@ -177,9 +163,13 @@ Inputs:
 - shop_id (int or None): Optional filter by shop id. None or 'Ignore' = ignore.
 - base_random_key (str or None): Optional filter by base random key. None or 'Ignore' = ignore.
 - member_random_key (str or None): Optional filter by member random key. None or 'Ignore' = ignore.
+- feature_keys (list[str], default []): List of extra feature keys to filter by.
+- feature_values (list[str], default []): List of corresponding feature values.
+  Each key[i], value[i] pair must match for the product to be included.
 
 Outputs:
 - List of dictionaries, each containing:
+    - base_random_key (str)
     - product_name (str)
     - shop_id (int)
     - price (int)
@@ -187,7 +177,6 @@ Outputs:
     - has_warranty (bool)
     - score (int)
     - extra_features (str)
-    - base_random_key (str)
     - member_random_key (str)
     - brand_title (str)
     - similarity (float): embedding similarity to the query
@@ -198,8 +187,9 @@ IMPORTANT:
 - During the conversation, this should be stored in `candidate_member`.
 - The `member_random_keys` list in the final ConversationResponse MUST remain NULL
   until the user explicitly confirms a 'member' OR the flow reaches Turn 5.
+- Note: Because member_total includes feature rows, multiple rows may appear for
+  the same shop-member if a product has multiple features. Deduplicate if needed.
 """
-
 
 SIMILARITY_SEARCH_NOTES = """
 ## Important: Interpreting similarity_search results
@@ -295,13 +285,13 @@ Final output: a ConversationResponse object with:
 - message (Persian, never empty)
 - member_random_keys (list[str] | null): Exactly 1 random_key only when finalized. Otherwise null.
 - finished (bool): True only when final answer is given.
-- All parameters (warranty, score, city, brand, price_range, product_name, product_features, shop_id, candidate_member).
+- All parameters (warranty, score, city, brand, price_range, product_name, feature_keys, feature_values, shop_id, candidate_member).
 
 ---
-
 ### Special Database VIEW
-- member_total view: (base_random_key, product_name, extra_features, shop_id, price, member_random_key, score, has_warranty, brand_title, city).
-
+# member_total view: 
+ (base_random_key, product_name, extra_features, shop_id, price, member_random_key, 
+  score, has_warranty, brand_title, city, feature_keys, feature_values)
 ---
 
 ### Parameter Handling
@@ -328,7 +318,7 @@ Final output: a ConversationResponse object with:
 - Update parameters with user’s answers.  
 - Use 'find_candidate_shops' to filter and get one candidate member. 
 - Propose one candidate (shop-level) each turn, showing:  
-  نام محصول، شناسه فروشگاه، قیمت، شهر، گارانتی، برند، امتیاز فروشنده، ویژگی‌ها.  
+  نام محصول، شناسه فروشگاه، قیمت، شهر، گارانتی، برند، امتیاز فروشنده، ویژگی‌ها. 
 - Ask: «آیا یکی از این فروشنده ها مناسب شماست؟ کدام؟ اگر بله، تلاش خواهم کرد تا عضو مورد نظر را پیدا کنم.»  
 - If the user explicitly confirms and you are certain it maps to a unique member, you may finalize early. Otherwise keep refining.
 
