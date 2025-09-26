@@ -9,7 +9,7 @@ from pydantic_ai import Agent, ModelSettings, UsageLimits
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from prompt.prompts import *
-from sql.similarity_search_db import similarity_search, find_candidate_shops, similarity_search_cat
+from sql.similarity_search_db import similarity_search, find_candidate_shops, similarity_search_cat, search_similarity_image
 from sql.sql_utils import execute_sql
 from sql.sql_utils import get_chat_history, get_base_id_and_index
 from utils.utils import preprocess_persian
@@ -455,7 +455,8 @@ class TorobImageSearchAgent(TorobAgentBase):
                 + "\n" + execute_query_tool
             ),
             output_type=ImageResponseSearch,
-            tools=[similarity_search, execute_sql],
+            tools=[search_similarity_image, 
+                   similarity_search],
         )
 
 class TorobScenarioAgent(TorobAgentBase):
@@ -540,11 +541,22 @@ class TorobHybridAgent(TorobAgentBase):
                 )
                 scenario_label = scenario_label.classification
                 print(scenario_label)
-                scenario_agent = TorobScenarioAgent(scenario_label)
-                result, agent_response = await scenario_agent.run(input_text= instruction,
-                                                                  image_b64 = user_image,
-                                                                  usage_limits=usage_limits, 
-                                                                  few_shot=few_shot)
+                if scenario_label in ['IMAGE_SEARCH']:
+                    search_res = search_similarity_image(user_image)
+                    rks = [res[0] for res in search_res]
+                    persian_names = [res[1] for res in search_res]
+                    similarities = [res[2] for res in search_res]
+                    message_list = [(persian_names[i] + " -> " + similarities[i]) for i in range(len(persian_names))]
+                    print("\n".join(message_list))
+
+                    agent_response = ImageResponseSearch(top_candidate=rks[0])
+                    result = None
+                else:
+                    scenario_agent = TorobScenarioAgent(scenario_label)
+                    result, agent_response = await scenario_agent.run(input_text= instruction,
+                                                                    image_b64 = user_image,
+                                                                    usage_limits=usage_limits, 
+                                                                    few_shot=few_shot)
                 print(dict(agent_response))
                 output_dict = normalize_to_shopping_response(agent_response)
                 return result, output_dict

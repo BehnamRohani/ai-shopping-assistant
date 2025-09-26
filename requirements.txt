@@ -1,4 +1,6 @@
 fastapi
+torch
+transformers
 pydantic-ai
 pydantic
 langchain-qdrant

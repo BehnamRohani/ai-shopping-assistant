@@ -7,7 +7,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi import Request
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from sql.similarity_search_db import similarity_search
+from sql.similarity_search_db import similarity_search, similarity_search_image
 from sql.sql_utils import init_logs_table, insert_log, insert_chat, get_latest_chat_history, create_member_total_view
 from agents.torob_agents import TorobHybridAgent
 from pydantic_ai import UsageLimits
@@ -62,6 +62,7 @@ async def chat(req: ChatRequest):
     try:
         input_dict = req.model_dump()
         all_texts = [m["content"] for m in input_dict["messages"] if m["type"] == "text"]
+        all_images = [m["content"] for m in input_dict["messages"] if m["type"] == "image"]
         print("[INPUT]", all_texts[0] + "\n" + input_dict['chat_id'])
 
         last = req.messages[-1]
@@ -70,6 +71,15 @@ async def chat(req: ChatRequest):
         # Similarity Search DB
         if input_dict['chat_id'] == 'retrieve_similar':
             results = similarity_search(content, top_k = 5, probes=10)
+            rks = [res[0] for res in results]
+            names = [res[1] for res in results]
+            similarities = [f"{res[2]:.4f}" for res in results]
+            message_list = [(names[i] + " -> " + similarities[i]) for i in range(len(names))]
+            resp = ChatResponse(message = "\n".join(message_list), base_random_keys=rks)
+            return resp
+        # Similarity Search DB
+        if input_dict['chat_id'] == 'image_similar':
+            results = similarity_search_image(all_images[0], top_k = 5)
             rks = [res[0] for res in results]
             names = [res[1] for res in results]
             similarities = [f"{res[2]:.4f}" for res in results]

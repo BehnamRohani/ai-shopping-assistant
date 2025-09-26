@@ -6,6 +6,12 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from typing import Optional, List, Tuple
 from psycopg2.extras import RealDictCursor
+import base64
+from io import BytesIO
+from PIL import Image
+import logging
+import torch
+from transformers import CLIPModel, CLIPProcessor
 
 load_dotenv()
 
@@ -26,6 +32,43 @@ MODEL = "text-embedding-3-small"
 # --- Initialize OpenAI client ---
 client = OpenAI(api_key=OPENAI_API_KEY, base_url = BASE_URL)
 
+def load_clip_model(model_name="openai/clip-vit-base-patch32"):
+    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+    logging.info(f"Using device: {DEVICE}")
+    try:
+        logging.info(f"Loading model: {model_name}...")
+        model = CLIPModel.from_pretrained(model_name).to(DEVICE)
+        processor = CLIPProcessor.from_pretrained(model_name)
+        EMBEDDING_DIM = model.config.projection_dim
+        logging.info(f"✅ Model initialized successfully. Embedding Dim: {EMBEDDING_DIM}")
+        return model, processor, DEVICE, EMBEDDING_DIM
+    except Exception as e:
+        logging.critical(f"❌ Failed to initialize model: {e}", exc_info=True)
+        exit(1)
+
+clip_model, clip_processor, DEVICE, EMBEDDING_DIM = load_clip_model()
+
+def embed_base64_image(data_uri):
+    """
+    Convert a single base64 image string to a normalized CLIP embedding.
+    Returns a 1D numpy array of shape (EMBEDDING_DIM,).
+    """
+    _, encoded = data_uri.split(",", 1)
+    image_bytes = base64.b64decode(encoded)
+    image = Image.open(BytesIO(image_bytes)).convert("RGB")
+
+    with torch.no_grad():
+        inputs = clip_processor(
+            images=[image],
+            return_tensors="pt",
+            padding=True
+        ).to(DEVICE)
+
+        embedding = clip_model.get_image_features(**inputs)
+        embedding = embedding / embedding.norm(dim=-1, keepdim=True)
+        return embedding.cpu().numpy()[0]
+
+
 def get_embedding(text):
     """Generate embedding vector for a given text using OpenAI."""
     response = client.embeddings.create(
@@ -33,6 +76,26 @@ def get_embedding(text):
         input=text
     )
     return response.data[0].embedding
+
+def search_similarity_image(data_uri, top_k: int = 5):
+    query_vector = embed_base64_image(data_uri)
+    query_vector_str = "[" + ",".join(map(str, query_vector)) + "]"
+
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT random_key,
+                       persian_name,
+                       1 - (embedding <=> %s) AS similarity
+                FROM image_embedding
+                ORDER BY embedding <=> %s
+                LIMIT %s
+            """, (query_vector_str, query_vector_str, top_k))
+
+            results = cur.fetchall()
+
+    return results
+
 def similarity_search(query, top_k: int = 5, probes: int = 20):
     """
     Perform a similarity search in the product_embed table using pgvector IVFFlat index.
