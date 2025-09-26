@@ -265,13 +265,14 @@ def find_candidate_shops(
                     WHERE mt2.base_random_key = mt.base_random_key
                       AND mt2.feature_key = %(feature_key_{i})s
                       AND (
-                            mt2.feature_value ILIKE '%' || %(feature_value_{i})s || '%'
-                            OR %(feature_value_{i})s ILIKE '%' || mt2.feature_value || '%'
+                            mt2.feature_value ILIKE %(ilike_value_{i})s
+                            OR %(ilike_value_{i})s ILIKE mt2.feature_value
+
                         )
                 )
             """
             params[f"feature_key_{i}"] = fk
-            params[f"feature_value_{i}"] = fv
+            params[f"ilike_value_{i}"] = f"%{fv}%"
 
     sql += """
         ),
@@ -283,8 +284,8 @@ def find_candidate_shops(
             JOIN product_embed pe ON f.base_random_key = pe.random_key
         )
         SELECT *
-        FROM ranked
-        ORDER BY similarity DESC, f.score DESC, f.price ASC
+        FROM ranked r
+        ORDER BY similarity DESC, score DESC, price ASC
         LIMIT %(limit)s;
     """
 
@@ -307,7 +308,7 @@ def find_candidate_shops(
             "extra_features": row[7],
             "member_random_key": row[8],
             "brand_title": row[9],
-            "similarity": round(row[10], 4) if row[12] is not None else None,
+            "similarity": round(row[10], 4) if row[10] is not None else None,
         }
         for row in rows
     ]
