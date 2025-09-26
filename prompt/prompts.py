@@ -45,6 +45,12 @@ Example: Features may be width (عرض), height (ارتفاع), size (انداز
 6. Table: cities
 - id: Unique identifier of the city.
 - name: Name of the city.
+
+7. Table: extra_features_products
+- random_key: Random key of the base product (links to base_products.random_key).
+- feature_key: Key of the feature (e.g., width, height, size, color, material, originality, stock_status, meterage, piece_count, power, etc.).
+- feature_value: Value of the feature (stored as text, e.g., "120cm", "red", "yes", "in stock").
+**This table stores the additional features of base products in a normalized key–value form, extracted from the extra_features JSON in base_products.**
 """
 
 input_classification_sys_prompt = """
@@ -268,7 +274,7 @@ Goal: Find the correct product AND the specific **member_random_key** the user w
 
 ##General Ideas:
    - Ask all questions on turn 1
-   - Also try to get product name -> helps when we 
+   - Also try to get product name -> helps when we call find_candidates_shop
    - Store the import parameters
    - Filter member_total view by the possessed info using the tool `find_candidates_shop` -> offer top candidate info to user
       + query should be the product name or description extracted from the conversation.
