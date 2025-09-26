@@ -187,6 +187,11 @@ class ImageTaskClassificationResponse(BaseModel):
             raise ValueError(f"classification must be one of {allowed}")
         return v
 
+class ImageResponseAll(BaseModel):
+    description: Optional[str] = None
+    long_description: Optional[str] = None
+    main_topic: Optional[str] = None
+    top_candidate: Optional[str] = None
 
 class ImageResponseTopic(BaseModel):
     description: Optional[str] = None
@@ -458,6 +463,31 @@ class TorobImageSearchAgent(TorobAgentBase):
                    similarity_search],
         )
 
+
+
+class TorobImageAllAgent(TorobAgentBase):
+    def __init__(self):
+        # Load category labels from pickle
+        # with open("categories_by_level.pkl", "rb") as f:
+        #     loaded_levels = pickle.load(f)
+        # labels_quotes = [f"Level {lvl}: {cats}" "\n" for lvl, cats in loaded_levels.items()]
+
+        # image_system_prompt = image_label_system_prompt + "\n" + "\n".join(labels_quotes)
+
+        super().__init__(
+            name="TorobImageSearchAgent",
+            model_name=os.getenv("IMAGE_MODEL"),
+            system_prompt=(
+                image_response_all_system_prompt
+                # + "\nYou have access to the following tools:"
+                # + "\n" + similarity_search_tool
+                # + "\n" + execute_query_tool
+            ),
+            output_type=ImageResponseAll,
+            # tools=[],
+        )
+
+
 class TorobScenarioAgent(TorobAgentBase):
     """
     A single agent that selects the proper Torob agent
@@ -492,6 +522,8 @@ class TorobScenarioAgent(TorobAgentBase):
             agent = TorobImageClassifierAgent()
         elif scenario_upper == "IMAGE_SEARCH":
             agent = TorobImageSearchAgent()
+        elif scenario_upper == "IMAGE_ALL":
+            agent = TorobImageAllAgent()
 
         # Copy attributes from the selected agent
         self.__dict__.update(agent.__dict__)
@@ -541,6 +573,8 @@ class TorobHybridAgent(TorobAgentBase):
                 # scenario_label = scenario_label.classification
                 # print(scenario_label)
 
+                scenario_agent = "IMAGE_ALL"
+
                 # Top similar products -> w.r.t image
                 search_res = similarity_search_image(user_image)
                 rks = [res[0] for res in search_res]
@@ -548,29 +582,28 @@ class TorobHybridAgent(TorobAgentBase):
                 cats = [res[2] for res in search_res]
                 similarities = [res[3] for res in search_res]
 
-                message_list = [f"(Category: {cats[i]}) Name: {persian_names[i]} -> Similartiy: {similarities[i]}" for i in range(len(persian_names))]
-                similarity_top5 = "Here is the list of top 5 similar products along with their categories:\n\n"
+                message_list = [f"(Category: {cats[i]}) Name: {persian_names[i]} -> Similartiy: {similarities[i]:.4f}" for i in range(len(persian_names))]
+                similarity_top5 = "Here is the list of top-5 Image Similarity products along with their categories:\n\n"
                 similarity_top5 += "\n".join(message_list)
 
                 print(similarity_top5)
 
-                resp = ShoppingResponse(message = cats[0],
-                                        base_random_keys=rks[0:1])
-                output_dict = dict(resp)
-                return None, output_dict
+                # resp = ShoppingResponse(message = cats[0],
+                #                         base_random_keys=rks[0:1])
+                # output_dict = dict(resp)
+                # return None, output_dict
 
 
-                # full_instruction = similarity_top5 + "\n\n" + instruction
+                full_instruction = similarity_top5 + "\n\n" + instruction
 
-                # scenario_agent = TorobScenarioAgent(scenario_label)
-                # result, agent_response = await scenario_agent.run(input_text= full_instruction,
-                #                                                 image_b64 = user_image,
-                #                                                 usage_limits=usage_limits, 
-                #                                                 few_shot=few_shot)
-                # print(dict(agent_response))
-                # output_dict = normalize_to_shopping_response(agent_response)
-                # output_dict['base_random_keys'] = rks[0:1]
-                # return result, output_dict
+                scenario_agent = TorobScenarioAgent(scenario_label)
+                result, agent_response = await scenario_agent.run(input_text= full_instruction,
+                                                                image_b64 = user_image,
+                                                                usage_limits=usage_limits, 
+                                                                few_shot=few_shot)
+                print(dict(agent_response))
+                output_dict = normalize_to_shopping_response(agent_response)
+                return result, output_dict
 
             chat_id = input_dict["chat_id"]
             base_id, chat_index = get_base_id_and_index(chat_id)   # your existing function
@@ -705,6 +738,13 @@ def normalize_to_shopping_response(output_obj: BaseModel) -> ShoppingResponse:
             base_random_keys=None,
             member_random_keys=members_keys,
             finished=output_obj.finished  # optional, default True
+        )
+    elif isinstance(output_obj, ImageResponseAll):
+        final_response = ShoppingResponse(
+            message=output_obj.main_topic,
+            base_random_keys=output_obj.top_candidate,
+            member_random_keys=None,
+            finished=True  # optional, default True
         )
 
     else:

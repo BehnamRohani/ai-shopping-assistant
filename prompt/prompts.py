@@ -163,10 +163,13 @@ and applies optional filters. Each filter is applied with the condition:
 `(param IS NULL OR condition)`, so if a parameter is None or 'Ignore', it is skipped.
 Special cases:
 - score → enforces `mt.score >= value`
-- price_min / price_max
+- price_min / price_max → BETWEEN with ±5% tolerance
 
 Inputs:
 - query (str): User's product description -> i.e., the product_name or more.
+- top_k (int, default 1): Maximum number of candidate shops to return.
+- price_min (int or None): Minimum price. None = ignore.
+- price_max (int or None): Maximum price. None = ignore.
 - has_warranty (bool or None): If user wants warranty. None or 'Ignore' = ignore.
 - score (int or None): Minimum shop score. None or 'Ignore' = ignore.
 - city (str or None): Desired city. None or 'Ignore' = ignore.
@@ -174,11 +177,6 @@ Inputs:
 - shop_id (int or None): Optional filter by shop id. None or 'Ignore' = ignore.
 - base_random_key (str or None): Optional filter by base random key. None or 'Ignore' = ignore.
 - member_random_key (str or None): Optional filter by member random key. None or 'Ignore' = ignore.
-- price_min (int or None): Min price. None = ignore.
-- price_max (int or None): Max price. None = ignore.
-- top_k (int, default 1): Maximum number of candidate shops to return.
-* Or any other argument of member_total VIEW that can be used as a filter with sql script
-   -> adding filtering conditions in form of "(value IS NULL OR mt.key = value)"
 
 Outputs:
 - List of dictionaries, each containing:
@@ -196,11 +194,12 @@ Outputs:
 
 IMPORTANT:
 - The returned `shop_id` is for inspection check with user.
-- The returned `member_random_key` is for convinience.
+- The returned `member_random_key` is for convenience.
 - During the conversation, this should be stored in `candidate_member`.
 - The `member_random_keys` list in the final ConversationResponse MUST remain NULL
   until the user explicitly confirms a 'member' OR the flow reaches Turn 5.
 """
+
 
 SIMILARITY_SEARCH_NOTES = """
 ## Important: Interpreting similarity_search results
@@ -283,6 +282,15 @@ SYSTEM_PROMPT_CONVERSATION = """
 You handle CONVERSATION queries (vague product/seller requests).  
 Goal: Find the correct product AND the specific **member_random_key** the user wants to purchase from.
 
+##General Ideas:
+   - Ask all questions on turn 1
+   - Also try to get product name -> helps when we 
+   - Store the import parameters
+   - Filter member_total view by the possessed info using the tool `find_candidates_shop` -> offer top candidate info to user
+      + query should be the product name or description extracted from the conversation.
+   - If user concurs -> We got shop_id and related info
+   - Filter further to get to member key as much as possible.
+
 Final output: a ConversationResponse object with:
 - message (Persian, never empty)
 - member_random_keys (list[str] | null): Exactly 1 random_key only when finalized. Otherwise null.
@@ -318,8 +326,8 @@ Final output: a ConversationResponse object with:
 
 **Turns 2–4**  
 - Update parameters with user’s answers.  
-- Use 'find_candidate_shops' to filter and get 3 candidate members. 
-- Propose 3 candidates (shop-level) each turn, showing:  
+- Use 'find_candidate_shops' to filter and get one candidate member. 
+- Propose one candidate (shop-level) each turn, showing:  
   نام محصول، شناسه فروشگاه، قیمت، شهر، گارانتی، برند، امتیاز فروشنده، ویژگی‌ها.  
 - Ask: «آیا یکی از این فروشنده ها مناسب شماست؟ کدام؟ اگر بله، تلاش خواهم کرد تا عضو مورد نظر را پیدا کنم.»  
 - If the user explicitly confirms and you are certain it maps to a unique member, you may finalize early. Otherwise keep refining.
@@ -409,6 +417,41 @@ class ImageResponseSearch(BaseModel):
 - Always respond ONLY with the JSON object conforming to ImageResponseSearch.
 - All text fields (description, long_description, candidate_names) must be in Persian.
 - Similarities must be floats with 4 decimal places.
+"""
+
+image_response_all_system_prompt = """
+You are an AI assistant that processes product images and generates both human-readable Persian descriptions and structured product classification information.
+
+You will be given the top 5 most similar products (via IMAGE similarity search) along with their categories, names, keys, and similarity scores.
+
+Your task is to return a JSON object strictly in the format of the class ImageResponseAll:
+
+class ImageResponseAll(BaseModel):
+    description: Optional[str] = None
+    long_description: Optional[str] = None
+    main_topic: Optional[str] = None
+    top_candidate: Optional[str] = None
+
+### Methodology:
+1. **Generate Descriptions**
+   - description: a short one-line caption in Persian summarizing the image.
+   - long_description: a more detailed Persian description of the image and product concept.
+
+2. **Leverage Similarity Results**
+   - You are provided with top-5 most similar base products (keys, names, categories, similarity scores).
+   - Use this information to refine your classification.
+
+3. **Fill Fields**
+   - description: Persian one-line caption.
+   - long_description: detailed Persian description.
+   - main_topic: select **one category** from the top-5 candidates that best fits the product.
+   - top_candidate: choose the **base product key** that is closest to the image product.
+
+### Output Rules:
+- Always respond ONLY with the JSON object conforming to ImageResponseAll.
+- All text fields (description, long_description, candidate names) must be in Persian.
+- main_topic must exactly match one of the candidate categories.
+- top_candidate must exactly match one of the candidate keys.
 """
 
 system_prompt_sql = """

@@ -167,13 +167,21 @@ def similarity_search_cat(query, top_k: int = 5):
 
 from typing import List, Optional, Any, Dict
 import psycopg2
+from typing import Optional, List, Dict, Any
+import psycopg2
 
 def find_candidate_shops(
     query: str,
     top_k: int = 1,
     price_min: Optional[int] = None,
     price_max: Optional[int] = None,
-    **filters: Any,
+    has_warranty: Optional[bool] = None,
+    score: Optional[int] = None,
+    city: Optional[str] = None,
+    brand_title: Optional[str] = None,
+    shop_id: Optional[int] = None,
+    base_random_key: Optional[str] = None,
+    member_random_key: Optional[str] = None,
 ) -> List[dict]:
     """
     Returns up to `top_k` candidate shops for a user query.
@@ -194,8 +202,8 @@ def find_candidate_shops(
     price_max = price_max if price_max is not None else price_max_default
 
     # ±5% tolerance
-    price_min = int(price_min * 0.95) if price_min != price_max else price_min
-    price_max = int(price_max * 1.05) if price_min != price_max else price_max
+    price_min = int(price_min * 0.95) if price_min == price_max else price_min
+    price_max = int(price_max * 1.05) if price_min == price_max else price_max
 
     params: Dict[str, Any] = {
         "query_vector": query_vector_str,
@@ -219,11 +227,22 @@ def find_candidate_shops(
         FROM member_total mt
         WHERE mt.price BETWEEN %(price_min)s AND %(price_max)s
     """
-    # dynamic filters appended here…
+
+    # Apply filters explicitly
+    filters = {
+        "has_warranty": has_warranty,
+        "score": score,
+        "city": city,
+        "brand_title": brand_title,
+        "shop_id": shop_id,
+        "base_random_key": base_random_key,
+        "member_random_key": member_random_key,
+    }
+
     for key, value in filters.items():
         if value is None or value == "Ignore":
             continue
-        if key=='has_warranty' and not value:
+        if key == "has_warranty" and not value:
             value = None
         if key == "score":
             sql += f" AND (%({key})s IS NULL OR mt.score >= %({key})s)"
@@ -246,7 +265,6 @@ def find_candidate_shops(
         LIMIT %(limit)s;
     """
 
-    # sql += " LIMIT %(limit)s;"
     params["limit"] = top_k
 
     with psycopg2.connect(**DB_CONFIG) as conn:
