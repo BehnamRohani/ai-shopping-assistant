@@ -77,6 +77,7 @@ def get_embedding(text):
 
 def similarity_search_image(data_uri, top_k: int = 5):
     query_vector = embed_base64_image(data_uri)
+    query_vector = query_vector.flatten().tolist()
     query_vector_str = "[" + ",".join(map(str, query_vector)) + "]"
 
     with psycopg2.connect(**DB_CONFIG) as conn:
