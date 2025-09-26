@@ -45,6 +45,9 @@ def load_history(path: str = "chat_history.json"):
 # ------------------------
 load_dotenv()
 
+top_features = top_features_summary()
+print(top_features)
+
 API_KEY = os.getenv("API_KEY")
 BASE_URL = os.getenv("BASE_URL")
 
@@ -397,8 +400,6 @@ class TorobInfoAgent(TorobAgentBase):
 
 class TorobConversationAgent(TorobAgentBase):
     def __init__(self):
-        top_features = top_features_summary()
-        print(top_features)
         super().__init__(
             name="TorobConversationAgent",
             model_name=os.getenv("SHOPPING_MODEL"),
