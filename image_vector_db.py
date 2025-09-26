@@ -35,9 +35,9 @@ with psycopg2.connect(**DB_CONFIG) as conn:
 
 print("Database image_embedding Created or Exists")
 
-def load_embeddings_from_jsonl(file_path):
-    """Load embeddings from a .jsonl file into a dict {random_key: embedding}"""
-    data = {}
+def stream_embeddings_from_jsonl(file_path, batch_size=100):
+    """Yield batches of (random_key, embedding) from a .jsonl file."""
+    batch = []
     with open(file_path, "r", encoding="utf-8") as f:
         for line in f:
             if not line.strip():
@@ -46,28 +46,28 @@ def load_embeddings_from_jsonl(file_path):
             key = record.get("random_key")
             embedding = record.get("embedding")
             if key and embedding:
-                data[key] = embedding
-    return data
-
-# --- Main ---
-embeddings_map = load_embeddings_from_jsonl(JSONL_FILE)
-print(f"Loaded {len(embeddings_map)} embeddings from file.")
+                if len(embedding) != 768:
+                    raise ValueError(f"Embedding for {key} has length {len(embedding)}, expected 768.")
+                batch.append((key, embedding))
+                if len(batch) >= batch_size:
+                    yield batch
+                    batch = []
+    if batch:
+        yield batch
 
 with psycopg2.connect(**DB_CONFIG) as conn:
     with conn.cursor() as cur:
-        keys = list(embeddings_map.keys())
-        with tqdm(total=len(keys), desc="Updating embeddings") as pbar:
-            for i in range(0, len(keys), BATCH_SIZE):
-                batch_keys = keys[i:i+BATCH_SIZE]
-                update_data = [(k, embeddings_map[k]) for k in batch_keys]
+        # Count lines first for tqdm
+        total_lines = sum(1 for _ in open(JSONL_FILE, "r", encoding="utf-8"))
+        print(f"Found {total_lines} rows in JSONL file.")
 
-                # Update database (embedding must be cast to vector(768))
+        with tqdm(total=total_lines, desc="Inserting embeddings") as pbar:
+            for batch in stream_embeddings_from_jsonl(JSONL_FILE, BATCH_SIZE):
                 cur.executemany("""
                     INSERT INTO image_embedding (random_key, embedding)
                     VALUES (%s, %s::vector(768))
                     ON CONFLICT (random_key) DO NOTHING;
-                """, update_data)
+                """, batch)
                 conn.commit()
-                pbar.update(len(batch_keys))
+                pbar.update(len(batch))
 
-print("All embeddings updated successfully from JSONL.")
