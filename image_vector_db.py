@@ -16,7 +16,7 @@ DB_CONFIG = {
     "password": os.getenv("DB_PASSWORD"),
 }
 
-JSONL_FILE = "/data/image_embedding.jsonl"
+JSONL_FILE = "data/image_embedding.jsonl"
 BATCH_SIZE = 100  # rows per DB update
 
 
