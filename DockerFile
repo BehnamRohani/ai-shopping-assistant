@@ -3,7 +3,7 @@ FROM python:3.13-slim
 WORKDIR /app
 
 # Set Hugging Face cache directory
-ENV TRANSFORMERS_CACHE=/models/hf_cache
+ENV HF_HOME=/models/hf_cache
 
 # Create the directory in the image
 RUN mkdir -p /models/hf_cache

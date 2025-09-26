@@ -35,7 +35,6 @@ client = OpenAI(api_key=OPENAI_API_KEY, base_url = BASE_URL)
 def load_clip_model(model_name="openai/clip-vit-base-patch32"):
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using device: {DEVICE}")
-    return None, None, DEVICE, 512
     try:
         logging.info(f"Loading model: {model_name}...")
         model = CLIPModel.from_pretrained(model_name).to(DEVICE)
@@ -120,6 +119,7 @@ def similarity_search(query, top_k: int = 5, probes: int = 20):
             cur.execute("""
                 SELECT random_key,
                        persian_name,
+                       category,
                        1 - (embedding <=> %s) AS similarity
                 FROM product_embed
                 ORDER BY embedding <=> %s

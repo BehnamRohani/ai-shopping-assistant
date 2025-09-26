@@ -533,32 +533,42 @@ class TorobHybridAgent(TorobAgentBase):
 
             # --- Step 1: Handle image request ---
             if user_image:
-                result, scenario_label = await self.image_agent_classifier.run(
-                    input_text=instruction,
-                    # image_b64=user_image,
-                    usage_limits=usage_limits
-                )
-                scenario_label = scenario_label.classification
-                print(scenario_label)
-                if scenario_label in ['IMAGE_SEARCH']:
-                    search_res = similarity_search_image(user_image)
-                    rks = [res[0] for res in search_res]
-                    persian_names = [res[1] for res in search_res]
-                    similarities = [res[2] for res in search_res]
-                    message_list = [(persian_names[i] + " -> " + similarities[i]) for i in range(len(persian_names))]
-                    print("\n".join(message_list))
+                # result, scenario_label = await self.image_agent_classifier.run(
+                #     input_text=instruction,
+                #     # image_b64=user_image,
+                #     usage_limits=usage_limits
+                # )
+                # scenario_label = scenario_label.classification
+                # print(scenario_label)
 
-                    agent_response = ImageResponseSearch(top_candidate=rks[0])
-                    result = None
-                else:
-                    scenario_agent = TorobScenarioAgent(scenario_label)
-                    result, agent_response = await scenario_agent.run(input_text= instruction,
-                                                                    image_b64 = user_image,
-                                                                    usage_limits=usage_limits, 
-                                                                    few_shot=few_shot)
-                print(dict(agent_response))
-                output_dict = normalize_to_shopping_response(agent_response)
-                return result, output_dict
+                # Top similar products -> w.r.t image
+                search_res = similarity_search_image(user_image)
+                rks = [res[0] for res in search_res]
+                persian_names = [res[1] for res in search_res]
+                cats = [res[2] for res in search_res]
+                similarities = [res[3] for res in search_res]
+                
+                # message_list = [f"(Category: {cats[i]}) Name: {persian_names[i]} -> Similartiy: {similarities[i]}" for i in range(len(persian_names))]
+                # similarity_top5 = "Here is the list of top 5 similar products along with their categories:\n\n"
+                # similarity_top5 += "\n".join(message_list)
+
+                resp = ShoppingResponse(message = cats[0:1],
+                                        base_random_keys=rks[0:1])
+                output_dict = dict(resp)
+                return None, output_dict
+
+
+                # full_instruction = similarity_top5 + "\n\n" + instruction
+
+                # scenario_agent = TorobScenarioAgent(scenario_label)
+                # result, agent_response = await scenario_agent.run(input_text= full_instruction,
+                #                                                 image_b64 = user_image,
+                #                                                 usage_limits=usage_limits, 
+                #                                                 few_shot=few_shot)
+                # print(dict(agent_response))
+                # output_dict = normalize_to_shopping_response(agent_response)
+                # output_dict['base_random_keys'] = rks[0:1]
+                # return result, output_dict
 
             chat_id = input_dict["chat_id"]
             base_id, chat_index = get_base_id_and_index(chat_id)   # your existing function
