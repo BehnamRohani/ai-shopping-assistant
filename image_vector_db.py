@@ -19,7 +19,6 @@ DB_CONFIG = {
 JSONL_FILE = "data/image_embedding.jsonl"
 BATCH_SIZE = 100  # rows per DB update
 
-
 with psycopg2.connect(**DB_CONFIG) as conn:
     with conn.cursor() as cur:
         # Enable pgvector extension if not already installed
@@ -33,6 +32,8 @@ with psycopg2.connect(**DB_CONFIG) as conn:
             );
         """)
         conn.commit()
+
+print("Database image_embedding Created or Exists")
 
 def load_embeddings_from_jsonl(file_path):
     """Load embeddings from a .jsonl file into a dict {random_key: embedding}"""
