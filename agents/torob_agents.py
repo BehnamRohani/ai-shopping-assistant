@@ -577,7 +577,7 @@ class TorobHybridAgent(TorobAgentBase):
                 scenario_label = "IMAGE_ALL"
 
                 # Top similar products -> w.r.t image
-                search_res = similarity_search_image(user_image, top_k = 10)
+                search_res = similarity_search_image(user_image, top_k = 5)
                 rks = [res[0] for res in search_res]
                 persian_names = [res[1] for res in search_res]
                 cats = [res[2] for res in search_res]
