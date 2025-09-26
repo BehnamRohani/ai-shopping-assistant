@@ -18,6 +18,7 @@ DB_CONFIG = {
 
 JSONL_FILE = "data/image_embedding.jsonl"
 BATCH_SIZE = 100  # rows per DB update
+DIM_LENGTH = 512
 
 with psycopg2.connect(**DB_CONFIG) as conn:
     with conn.cursor() as cur:
@@ -25,10 +26,10 @@ with psycopg2.connect(**DB_CONFIG) as conn:
         cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
 
         # Create the image_embedding table if it doesn't exist
-        cur.execute("""
+        cur.execute(f"""
             CREATE TABLE IF NOT EXISTS image_embedding (
                 random_key TEXT PRIMARY KEY,
-                embedding vector(768)
+                embedding vector({DIM_LENGTH})
             );
         """)
         conn.commit()
@@ -46,8 +47,8 @@ def stream_embeddings_from_jsonl(file_path, batch_size=100):
             key = record.get("random_key")
             embedding = record.get("embedding")
             if key and embedding:
-                if len(embedding) != 768:
-                    raise ValueError(f"Embedding for {key} has length {len(embedding)}, expected 768.")
+                if len(embedding) != DIM_LENGTH:
+                    raise ValueError(f"Embedding for {key} has length {len(embedding)}, expected {DIM_LENGTH}.")
                 batch.append((key, embedding))
                 if len(batch) >= batch_size:
                     yield batch
@@ -65,9 +66,8 @@ with psycopg2.connect(**DB_CONFIG) as conn:
             for batch in stream_embeddings_from_jsonl(JSONL_FILE, BATCH_SIZE):
                 cur.executemany("""
                     INSERT INTO image_embedding (random_key, embedding)
-                    VALUES (%s, %s::vector(768))
+                    VALUES (%s, %s::vector(512))
                     ON CONFLICT (random_key) DO NOTHING;
                 """, batch)
                 conn.commit()
                 pbar.update(len(batch))
-
