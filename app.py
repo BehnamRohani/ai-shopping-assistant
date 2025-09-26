@@ -19,7 +19,7 @@ OPENAI_API_KEY = os.environ['API_KEY']
 BASE_URL = os.environ['BASE_URL']
 MODEL_NAME = "gpt-4.1-mini"
 
-create_member_total_view()
+# create_member_total_view()
 
 # ------ Lifespan Context ------
 from contextlib import asynccontextmanager

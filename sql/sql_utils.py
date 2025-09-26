@@ -29,9 +29,9 @@ def create_member_total_view():
     """
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
-            cur.execute("DROP VIEW IF EXISTS member_total CASCADE;")
+            # cur.execute("DROP VIEW IF EXISTS member_total CASCADE;")
             cur.execute("""
-                CREATE OR REPLACE VIEW member_total AS
+                CREATE MATERIALIZED VIEW member_total AS
                 SELECT 
                     bp.random_key AS base_random_key,
                     bp.persian_name,

@@ -199,7 +199,7 @@ def find_candidate_shops(
     query_vector = get_embedding(query)
     query_vector_str = "[" + ",".join(map(str, query_vector)) + "]"
 
-    price_min_default, price_max_default = 0, 1_000_000_000
+    price_min_default, price_max_default = 10000, 100000000
     price_min = price_min if price_min is not None else price_min_default
     price_max = price_max if price_max is not None else price_max_default
 
@@ -232,17 +232,17 @@ def find_candidate_shops(
     """
 
     # Only apply filters if value is set
-    if has_warranty is not None:
-        sql += " AND mt.has_warranty = %(has_warranty)s"
-        params["has_warranty"] = has_warranty
+    if city:
+        sql += " AND mt.city = %(city)s"
+        params["city"] = city
 
     if score is not None:
         sql += " AND mt.score >= %(score)s"
         params["score"] = score
 
-    if city:
-        sql += " AND mt.city = %(city)s"
-        params["city"] = city
+    if has_warranty is not None:
+        sql += " AND mt.has_warranty = %(has_warranty)s"
+        params["has_warranty"] = has_warranty
 
     if brand_title:
         sql += " AND mt.brand_title = %(brand_title)s"
@@ -279,7 +279,7 @@ def find_candidate_shops(
             JOIN product_embed pe ON f.base_random_key = pe.random_key
         )
         SELECT *
-        FROM ranked r
+        FROM ranked
         ORDER BY similarity DESC
         LIMIT %(limit)s;
     """
