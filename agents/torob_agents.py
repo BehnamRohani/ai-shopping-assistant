@@ -573,7 +573,7 @@ class TorobHybridAgent(TorobAgentBase):
                 # scenario_label = scenario_label.classification
                 # print(scenario_label)
 
-                scenario_agent = "IMAGE_ALL"
+                scenario_label = "IMAGE_ALL"
 
                 # Top similar products -> w.r.t image
                 search_res = similarity_search_image(user_image)
