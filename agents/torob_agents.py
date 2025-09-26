@@ -467,12 +467,12 @@ class TorobImageSearchAgent(TorobAgentBase):
 
 class TorobImageAllAgent(TorobAgentBase):
     def __init__(self):
-        Load category labels from pickle
+        # Load category labels from pickle
         with open("categories_by_level.pkl", "rb") as f:
             loaded_levels = pickle.load(f)
         labels_quotes = [f"Level {lvl}: {cats}" "\n" for lvl, cats in loaded_levels.items()]
 
-        image_system_prompt = image_label_system_prompt + "\n" + "\n".join(labels_quotes)
+        image_system_prompt = image_response_all_system_prompt + "\n" + "\n".join(labels_quotes)
 
         super().__init__(
             name="TorobImageSearchAgent",
