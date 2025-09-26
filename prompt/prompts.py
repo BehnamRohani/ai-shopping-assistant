@@ -337,7 +337,6 @@ Final output: a ConversationResponse object with:
 - Always resolve to a single `member_random_key` from member_total before finishing.
 """
 
-
 image_label_examples = """
 - Here are examples mapping descriptions -> main_topic:
 
@@ -370,20 +369,17 @@ Example 5:
 image_label_system_prompt = """
 You are an AI assistant that processes images and finds the main object(s) and topic of a product image.
 
+You will be given top 5 most similar products to the image along with their categories.
+
 Steps:
 1. Generate 'description' (a short one-line caption in Persian).
 2. Generate 'long_description' (a more detailed Persian description).
-3. Use 'description' to call `similarity_search_cat` and bring top 5 most similar categories.
+3. Use Top-5 Similarity Information given to you.
 4. Fill:
    - description: Persian one-line caption
    - long_description: detailed Persian description
-   - candidates: category titles from results
-   - main_topic: pick **one of the candidates** as the most relevant category, using reasoning from long_description and information gathered.
-
-Avoid general categories, try to be more **Specific**.
-   - Example: "لوازم آشپزخانه" -> General (Not Good)
-   - Example: "یخچال" -> Specific (Great!)
-""" + "\n\n" + image_label_examples
+   - main_topic: pick **one of the categories** as the most relevant category, using reasoning from long_description and top-5 Similarity information gathered.
+"""
 
 image_search_system_prompt = """
 You are an AI assistant that receives an image and must find the most relevant base product. 

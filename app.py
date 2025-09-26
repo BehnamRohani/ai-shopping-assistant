@@ -78,14 +78,14 @@ async def chat(req: ChatRequest):
             resp = ChatResponse(message = "\n".join(message_list), base_random_keys=rks)
             return resp
         # Similarity Search DB
-        if input_dict['chat_id'] == 'image_similar':
-            results = similarity_search_image(all_images[0], top_k = 5)
-            rks = [res[0] for res in results]
-            names = [res[1] for res in results]
-            similarities = [f"{res[2]:.4f}" for res in results]
-            message_list = [(names[i] + " -> " + similarities[i]) for i in range(len(names))]
-            resp = ChatResponse(message = "\n".join(message_list), base_random_keys=rks)
-            return resp
+        # if input_dict['chat_id'] == 'image_similar':
+        #     results = similarity_search_image(all_images[0], top_k = 5)
+        #     rks = [res[0] for res in results]
+        #     names = [res[1] for res in results]
+        #     similarities = [f"{res[2]:.4f}" for res in results]
+        #     message_list = [(names[i] + " -> " + similarities[i]) for i in range(len(names))]
+        #     resp = ChatResponse(message = "\n".join(message_list), base_random_keys=rks)
+        #     return resp
         # Return chat logs
         if input_dict['chat_id'] == 'check_chat_log':
             resp = get_latest_chat_history(content)

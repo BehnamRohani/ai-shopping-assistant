@@ -85,6 +85,7 @@ def similarity_search_image(data_uri, top_k: int = 5):
             cur.execute("""
                 SELECT random_key,
                        persian_name,
+                       category,
                        1 - (embedding <=> %s) AS similarity
                 FROM image_embedding
                 ORDER BY embedding <=> %s
@@ -119,7 +120,6 @@ def similarity_search(query, top_k: int = 5, probes: int = 20):
             cur.execute("""
                 SELECT random_key,
                        persian_name,
-                       category,
                        1 - (embedding <=> %s) AS similarity
                 FROM product_embed
                 ORDER BY embedding <=> %s
