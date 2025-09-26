@@ -438,7 +438,7 @@ def top_features_summary():
     SELECT 
         feature_key,
         COUNT(*) AS usage_count,
-        MIN(feature_value) AS example_value
+        MAX(feature_value) AS example_value
     FROM extra_features_products
     GROUP BY feature_key
     ORDER BY usage_count DESC
