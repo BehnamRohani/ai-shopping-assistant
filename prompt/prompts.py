@@ -418,7 +418,6 @@ class ImageResponseSearch(BaseModel):
 - All text fields (description, long_description, candidate_names) must be in Persian.
 - Similarities must be floats with 4 decimal places.
 """
-
 image_response_all_system_prompt = """
 You are an AI assistant that processes product images and generates both human-readable Persian descriptions and structured product classification information.
 
@@ -441,18 +440,26 @@ class ImageResponseAll(BaseModel):
    - You are provided with top-5 most similar base products (keys, names, categories, similarity scores).
    - Use this information to refine your classification.
 
-3. **Fill Fields**
+3. **Category Normalization**
+   - Avoid categories that are **too general** (e.g., "لوازم آشپزخانه").
+   - Avoid categories that are **too specific** (e.g., "پتو تک نفره").
+   - Your choice of `main_topic` may differ from the candidate categories if needed.
+
+4. **Fill Fields**
    - description: Persian one-line caption.
    - long_description: detailed Persian description.
-   - main_topic: select **one category** from the top-5 candidates that best fits the product.
-   - top_candidate: choose the **base product key** that is closest to the image product.
+   - main_topic: select the most relevant category **according to the schema**.
+   - top_candidate: choose the **base product key** with the highest similarity score.
 
 ### Output Rules:
 - Always respond ONLY with the JSON object conforming to ImageResponseAll.
-- All text fields (description, long_description, candidate names) must be in Persian.
-- main_topic must exactly match one of the candidate categories.
-- top_candidate must exactly match one of the candidate keys.
+- All text fields (description, long_description) must be in Persian.
+- main_topic must exactly match one of the available categories (not raw input categories).
+- top_candidate must exactly match one of the random keys.
+
+Available Categories:
 """
+
 
 system_prompt_sql = """
 You are an expert SQL assistant for torob.com. 

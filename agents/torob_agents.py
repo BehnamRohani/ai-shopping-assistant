@@ -467,18 +467,18 @@ class TorobImageSearchAgent(TorobAgentBase):
 
 class TorobImageAllAgent(TorobAgentBase):
     def __init__(self):
-        # Load category labels from pickle
-        # with open("categories_by_level.pkl", "rb") as f:
-        #     loaded_levels = pickle.load(f)
-        # labels_quotes = [f"Level {lvl}: {cats}" "\n" for lvl, cats in loaded_levels.items()]
+        Load category labels from pickle
+        with open("categories_by_level.pkl", "rb") as f:
+            loaded_levels = pickle.load(f)
+        labels_quotes = [f"Level {lvl}: {cats}" "\n" for lvl, cats in loaded_levels.items()]
 
-        # image_system_prompt = image_label_system_prompt + "\n" + "\n".join(labels_quotes)
+        image_system_prompt = image_label_system_prompt + "\n" + "\n".join(labels_quotes)
 
         super().__init__(
             name="TorobImageSearchAgent",
             model_name=os.getenv("IMAGE_MODEL"),
             system_prompt=(
-                image_response_all_system_prompt
+                image_system_prompt
                 # + "\nYou have access to the following tools:"
                 # + "\n" + similarity_search_tool
                 # + "\n" + execute_query_tool
@@ -582,7 +582,7 @@ class TorobHybridAgent(TorobAgentBase):
                 cats = [res[2] for res in search_res]
                 similarities = [res[3] for res in search_res]
 
-                message_list = [f"(Category: {cats[i]}) Name: {persian_names[i]} -> Similartiy: {similarities[i]:.4f}" for i in range(len(persian_names))]
+                message_list = [f"(Category: {cats[i]}) random_key: {rks[i]}, Name: {persian_names[i]} -> Similartiy: {similarities[i]:.4f}" for i in range(len(persian_names))]
                 similarity_top5 = "Here is the list of top-5 Image Similarity products along with their categories:\n\n"
                 similarity_top5 += "\n".join(message_list)
 
