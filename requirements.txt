@@ -12,3 +12,4 @@ uvicorn[standard]
 python-dotenv
 pandas
 numpy
+pillow
