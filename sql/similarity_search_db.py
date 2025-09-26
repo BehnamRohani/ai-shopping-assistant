@@ -68,7 +68,6 @@ def embed_base64_image(data_uri):
         embedding = embedding / embedding.norm(dim=-1, keepdim=True)
         return embedding.cpu().numpy()[0]
 
-
 def get_embedding(text):
     """Generate embedding vector for a given text using OpenAI."""
     response = client.embeddings.create(
@@ -77,7 +76,7 @@ def get_embedding(text):
     )
     return response.data[0].embedding
 
-def search_similarity_image(data_uri, top_k: int = 5):
+def similarity_search_image(data_uri, top_k: int = 5):
     query_vector = embed_base64_image(data_uri)
     query_vector_str = "[" + ",".join(map(str, query_vector)) + "]"
 

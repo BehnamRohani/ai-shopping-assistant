@@ -9,7 +9,7 @@ from pydantic_ai import Agent, ModelSettings, UsageLimits
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from prompt.prompts import *
-from sql.similarity_search_db import similarity_search, find_candidate_shops, similarity_search_cat, search_similarity_image
+from sql.similarity_search_db import similarity_search, find_candidate_shops, similarity_search_cat, similarity_search_image
 from sql.sql_utils import execute_sql
 from sql.sql_utils import get_chat_history, get_base_id_and_index
 from utils.utils import preprocess_persian
@@ -455,7 +455,7 @@ class TorobImageSearchAgent(TorobAgentBase):
                 + "\n" + execute_query_tool
             ),
             output_type=ImageResponseSearch,
-            tools=[search_similarity_image, 
+            tools=[similarity_search_image, 
                    similarity_search],
         )
 
@@ -542,7 +542,7 @@ class TorobHybridAgent(TorobAgentBase):
                 scenario_label = scenario_label.classification
                 print(scenario_label)
                 if scenario_label in ['IMAGE_SEARCH']:
-                    search_res = search_similarity_image(user_image)
+                    search_res = similarity_search_image(user_image)
                     rks = [res[0] for res in search_res]
                     persian_names = [res[1] for res in search_res]
                     similarities = [res[2] for res in search_res]
