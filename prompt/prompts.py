@@ -47,6 +47,14 @@ Example: Features may be width (عرض), height (ارتفاع), size (انداز
 - name: Name of the city.
 """
 
+extra_features_sys = """"
+7. Table: extra_features_products
+- random_key: Random key of the base product (links to base_products.random_key).
+- feature_key: Key of the feature (e.g., width, height, size, color, material, originality, stock_status, meterage, piece_count, power, etc.).
+- feature_value: Value of the feature (stored as text, e.g., "120cm", "red", "yes", "in stock").
+**This table stores the additional features of base products in a normalized key–value form, extracted from the extra_features JSON in base_products.**
+"""
+
 input_classification_sys_prompt = """
 You are an AI assistant that receives user message and must classify and respond according to five scenarios. Each scenario maps to one of the following classes:
 
