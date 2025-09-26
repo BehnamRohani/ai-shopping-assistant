@@ -187,8 +187,6 @@ IMPORTANT:
 - During the conversation, this should be stored in `candidate_member`.
 - The `member_random_keys` list in the final ConversationResponse MUST remain NULL
   until the user explicitly confirms a 'member' OR the flow reaches Turn 5.
-- Note: Because member_total includes feature rows, multiple rows may appear for
-  the same shop-member if a product has multiple features. Deduplicate if needed.
 """
 
 SIMILARITY_SEARCH_NOTES = """
@@ -274,8 +272,8 @@ Goal: Find the correct product AND the specific **member_random_key** the user w
 
 ##General Ideas:
    - Ask all questions on turn 1
-   - Also try to get product name -> helps when we 
-   - Store the import parameters
+   - Also try to get product name -> helps when when using it as query for `find_candidates_shop`
+   - Identify parameters of seller/shop for filtering.
    - Filter member_total view by the possessed info using the tool `find_candidates_shop` -> offer top candidate info to user
       + query should be the product name or description extracted from the conversation.
    - If user concurs -> We got shop_id and related info
@@ -285,21 +283,12 @@ Final output: a ConversationResponse object with:
 - message (Persian, never empty)
 - member_random_keys (list[str] | null): Exactly 1 random_key only when finalized. Otherwise null.
 - finished (bool): True only when final answer is given.
-- All parameters (warranty, score, city, brand, price_range, product_name, feature_keys, feature_values, shop_id, candidate_member).
 
 ---
 ### Special Database VIEW
 # member_total view: 
  (base_random_key, product_name, extra_features, shop_id, price, member_random_key, 
   score, has_warranty, brand_title, city, feature_keys, feature_values)
----
-
-### Parameter Handling
-- None = ask user.  
-- "Ignore" = user doesn’t care → skip filter.  
-- All parameters are updateable (can change if user provides new info).  
-- `candidate_member` and `shop_id` are only for intermediate suggestions. Even if set, `member_random_keys` must stay null until finalization.
-
 ---
 
 ### Conversation Flow
@@ -315,7 +304,6 @@ Final output: a ConversationResponse object with:
 - Do NOT suggest candidates yet.  
 
 **Turns 2–4**  
-- Update parameters with user’s answers.  
 - Use 'find_candidate_shops' to filter and get one candidate member. 
 - Propose one candidate (shop-level) each turn, showing:  
   نام محصول، شناسه فروشگاه، قیمت، شهر، گارانتی، برند، امتیاز فروشنده، ویژگی‌ها. 

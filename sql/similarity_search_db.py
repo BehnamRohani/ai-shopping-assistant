@@ -189,25 +189,23 @@ def find_candidate_shops(
     """
     Returns up to `top_k` candidate shops for a user query.
     - Uses product embeddings for similarity on Persian product name.
-    - Respects filters with IS NULL OR ... conditions.
+    - Respects filters.
     - Special cases:
         * score → mt.score >= %(score)s
         * price_min/price_max → BETWEEN with ±5% tolerance
-        * feature_keys/feature_values → filter by key-value pairs in extra_features_products
+        * feature_keys/feature_values → filter by JSONB extra_features
     """
 
-    # Convert query to embedding
-    query_vector = get_embedding(query)  # Returns list[float]
+    query_vector = get_embedding(query)
     query_vector_str = "[" + ",".join(map(str, query_vector)) + "]"
 
-    # Price range defaults
-    price_min_default, price_max_default = 0, 1000000000
+    price_min_default, price_max_default = 0, 1_000_000_000
     price_min = price_min if price_min is not None else price_min_default
     price_max = price_max if price_max is not None else price_max_default
 
-    # ±5% tolerance
-    price_min = int(price_min * 0.95) if price_min == price_max else price_min
-    price_max = int(price_max * 1.05) if price_min == price_max else price_max
+    if price_min == price_max:
+        price_min = int(price_min * 0.95)
+        price_max = int(price_max * 1.05)
 
     params: Dict[str, Any] = {
         "query_vector": query_vector_str,
@@ -233,46 +231,43 @@ def find_candidate_shops(
         WHERE mt.price BETWEEN %(price_min)s AND %(price_max)s
     """
 
-    # Apply basic filters
-    filters = {
-        "has_warranty": has_warranty,
-        "score": score,
-        "city": city,
-        "brand_title": brand_title,
-        "shop_id": shop_id,
-        "base_random_key": base_random_key,
-        "member_random_key": member_random_key,
-    }
+    # Only apply filters if value is set
+    if has_warranty is not None:
+        sql += " AND mt.has_warranty = %(has_warranty)s"
+        params["has_warranty"] = has_warranty
 
-    for key, value in filters.items():
-        if value is None or value == "Ignore":
-            continue
-        if key == "has_warranty" and not value:
-            value = None
-        if key == "score":
-            sql += f" AND (%({key})s IS NULL OR mt.score >= %({key})s)"
-        else:
-            sql += f" AND (%({key})s IS NULL OR mt.{key} = %({key})s)"
-        params[key] = value
+    if score is not None:
+        sql += " AND mt.score >= %(score)s"
+        params["score"] = score
 
-    # Apply feature filters
+    if city:
+        sql += " AND mt.city = %(city)s"
+        params["city"] = city
+
+    if brand_title:
+        sql += " AND mt.brand_title = %(brand_title)s"
+        params["brand_title"] = brand_title
+
+    if shop_id:
+        sql += " AND mt.shop_id = %(shop_id)s"
+        params["shop_id"] = shop_id
+
+    if base_random_key:
+        sql += " AND mt.base_random_key = %(base_random_key)s"
+        params["base_random_key"] = base_random_key
+
+    if member_random_key:
+        sql += " AND mt.member_random_key = %(member_random_key)s"
+        params["member_random_key"] = member_random_key
+
+    # JSONB feature filters
     if feature_keys and feature_values and len(feature_keys) == len(feature_values):
         for i, (fk, fv) in enumerate(zip(feature_keys, feature_values)):
             sql += f"""
-                AND EXISTS (
-                    SELECT 1
-                    FROM member_total mt2
-                    WHERE mt2.base_random_key = mt.base_random_key
-                      AND mt2.feature_key = %(feature_key_{i})s
-                      AND (
-                            mt2.feature_value ILIKE %(ilike_value_{i})s
-                            OR %(ilike_value_{i})s ILIKE mt2.feature_value
-
-                        )
-                )
+                AND mt.extra_features ->> %(feature_key_{i})s ILIKE %(feature_value_{i})s
             """
             params[f"feature_key_{i}"] = fk
-            params[f"ilike_value_{i}"] = f"%{fv}%"
+            params[f"feature_value_{i}"] = f"%{fv}%"
 
     sql += """
         ),
@@ -285,13 +280,12 @@ def find_candidate_shops(
         )
         SELECT *
         FROM ranked r
-        ORDER BY similarity DESC, score DESC, price ASC
+        ORDER BY similarity DESC
         LIMIT %(limit)s;
     """
 
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
-            cur.execute("SET enable_seqscan = off;")
             cur.execute("SET ivfflat.probes = %s;", (20,))
             cur.execute(sql, params)
             rows = cur.fetchall()
@@ -313,4 +307,3 @@ def find_candidate_shops(
         for row in rows
     ]
     return results
-

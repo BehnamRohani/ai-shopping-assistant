@@ -35,7 +35,7 @@ def create_member_total_view():
                 SELECT 
                     bp.random_key AS base_random_key,
                     bp.persian_name,
-                    bp.extra_features,
+                    bp.extra_features::jsonb AS extra_features,
                     m.shop_id,
                     m.price,
                     m.random_key AS member_random_key,
@@ -43,14 +43,11 @@ def create_member_total_view():
                     s.has_warranty,
                     b.title AS brand_title,
                     ci.name AS city,
-                    ef.feature_key,
-                    ef.feature_value
                 FROM members m
                 JOIN base_products bp ON bp.random_key = m.base_random_key
                 LEFT JOIN shops s ON m.shop_id = s.id
                 LEFT JOIN brands b ON bp.brand_id = b.id
                 LEFT JOIN cities ci ON s.city_id = ci.id
-                LEFT JOIN extra_features_products ef ON bp.random_key = ef.random_key;
             """)
         conn.commit()
 
