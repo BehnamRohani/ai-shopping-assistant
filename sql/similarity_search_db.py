@@ -44,7 +44,6 @@ def load_clip_model(model_name="openai/clip-vit-base-patch32"):
         return model, processor, DEVICE, EMBEDDING_DIM
     except Exception as e:
         logging.critical(f"❌ Failed to initialize model: {e}", exc_info=True)
-        exit(1)
 
 clip_model, clip_processor, DEVICE, EMBEDDING_DIM = load_clip_model()
 
