@@ -42,7 +42,7 @@ def create_member_total_view():
                     s.score,
                     s.has_warranty,
                     b.title AS brand_title,
-                    ci.name AS city,
+                    ci.name AS city
                 FROM members m
                 JOIN base_products bp ON bp.random_key = m.base_random_key
                 LEFT JOIN shops s ON m.shop_id = s.id
@@ -149,7 +149,7 @@ def insert_chat(input_dict: dict, output_dict: dict, extra_info: dict = None):
         "chat_id": chat_id,
         "base_id": base_id,
         "user_text": user_text,
-        "user_image_url": user_image_url,
+        "user_image_url": None,
         "chat_index": chat_index,
         "model_text": output_dict.get("message"),
         "model_image_url": None,

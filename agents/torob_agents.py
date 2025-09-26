@@ -67,19 +67,19 @@ class ConversationResponse(BaseModel):
 
     finished: Optional[bool] = False
 
-    # shop_id: Optional[int] = None
-    # candidate_member: Optional[str] = None
+    shop_id: Optional[int] = None
+    candidate_member: Optional[str] = None
 
-    # # --- Not Changeable parameters ---
-    # has_warranty: Optional[bool] = None
-    # score: Optional[float] = None
-    # city_name: Optional[str] = None
-    # brand_title: Optional[str] = None
-    # price_range: Optional[str] = None
+    # --- Not Changeable parameters ---
+    has_warranty: Optional[bool] = None
+    score: Optional[float] = None
+    city_name: Optional[str] = None
+    brand_title: Optional[str] = None
+    price_range: Optional[str] = None
 
-    # # --- Updateable parameters ---
-    # product_name: Optional[str] = None
-    # product_features: Optional[str] = None
+    # --- Updateable parameters ---
+    product_name: Optional[str] = None
+    product_features: Optional[str] = None
 
 
 class ExtraInfoConversation(BaseModel):
@@ -611,8 +611,8 @@ class TorobHybridAgent(TorobAgentBase):
             chat_id = input_dict["chat_id"]
             base_id, chat_index = get_base_id_and_index(chat_id)   # your existing function
             history = get_chat_history(base_id)[-4:]
-            # info_chat_index = max(1,chat_index-1)
-            # extra_info = load_extra_info(base_id, info_chat_index)
+            info_chat_index = max(1,chat_index-1)
+            extra_info = load_extra_info(base_id, info_chat_index)
 
             # # --- Step 2: Determine scenario ---
             if not history:
@@ -632,12 +632,12 @@ class TorobHybridAgent(TorobAgentBase):
                         # Add extra info by now
             # message_history = None
             # local_path = ""
-            # if scenario_label in ['CONVERSATION'] and extra_info:
-            #     # local_path = history_folder  /  f"{base_id}.json"
-            #     # loaded_history = load_history(local_path)
-            #     # message_history =  ModelMessagesTypeAdapter.validate_python(loaded_history)
-            #     extra_info_text = "\n".join([f"{k} = {v}" for k,v in  extra_info.items()])
-            #     prompt += f"Turn ({info_chat_index}) Parameters:" + "\n\n"  + extra_info_text + "\n\n"
+            if scenario_label in ['CONVERSATION'] and extra_info:
+                # local_path = history_folder  /  f"{base_id}.json"
+                # loaded_history = load_history(local_path)
+                # message_history =  ModelMessagesTypeAdapter.validate_python(loaded_history)
+                extra_info_text = "\n".join([f"{k} = {v}" for k,v in  extra_info.items()])
+                prompt += f"Turn ({info_chat_index}) Parameters:" + "\n\n"  + extra_info_text + "\n\n"
 
             scenario_agent = TorobScenarioAgent(scenario_label)
             # Step 1: preprocess input
@@ -759,17 +759,17 @@ def normalize_to_shopping_response(output_obj: BaseModel) -> ShoppingResponse:
             finished=True
         )
     final_response = dict(final_response)
-    # if isinstance(output_obj, ConversationResponse):
-    #     extra_info={
-    #                 "has_warranty": output_obj.has_warranty,
-    #                 "score": output_obj.score,
-    #                 "city_name": output_obj.city_name,
-    #                 "brand_title": output_obj.brand_title,
-    #                 "price_range": output_obj.price_range,
-    #                 "product_name": output_obj.product_name,
-    #                 "product_features": output_obj.product_features,
-    #                 "candidate_member": output_obj.candidate_member,
-    #                 "shop_id": output_obj.shop_id,
-    #                 }
-    #     final_response['extra_info'] = extra_info
+    if isinstance(output_obj, ConversationResponse):
+        extra_info={
+                    "has_warranty": output_obj.has_warranty,
+                    "score": output_obj.score,
+                    "city_name": output_obj.city_name,
+                    "brand_title": output_obj.brand_title,
+                    "price_range": output_obj.price_range,
+                    "product_name": output_obj.product_name,
+                    "product_features": output_obj.product_features,
+                    "candidate_member": output_obj.candidate_member,
+                    "shop_id": output_obj.shop_id,
+                    }
+        final_response['extra_info'] = extra_info
     return final_response
