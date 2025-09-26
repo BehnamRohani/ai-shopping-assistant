@@ -34,16 +34,17 @@ client = OpenAI(api_key=OPENAI_API_KEY, base_url = BASE_URL)
 
 def load_clip_model(model_name="openai/clip-vit-base-patch32"):
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    logging.info(f"Using device: {DEVICE}")
+    print(f"Using device: {DEVICE}")
+    return None, None, DEVICE, 512
     try:
         logging.info(f"Loading model: {model_name}...")
         model = CLIPModel.from_pretrained(model_name).to(DEVICE)
         processor = CLIPProcessor.from_pretrained(model_name)
         EMBEDDING_DIM = model.config.projection_dim
-        logging.info(f"✅ Model initialized successfully. Embedding Dim: {EMBEDDING_DIM}")
+        print(f"✅ Model initialized successfully. Embedding Dim: {EMBEDDING_DIM}")
         return model, processor, DEVICE, EMBEDDING_DIM
     except Exception as e:
-        logging.critical(f"❌ Failed to initialize model: {e}", exc_info=True)
+        print(f"❌ Failed to initialize model: {e}", exc_info=True)
 
 clip_model, clip_processor, DEVICE, EMBEDDING_DIM = load_clip_model()
 
