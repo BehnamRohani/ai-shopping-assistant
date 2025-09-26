@@ -264,7 +264,10 @@ def find_candidate_shops(
                     FROM member_total mt2
                     WHERE mt2.base_random_key = mt.base_random_key
                       AND mt2.feature_key = %(feature_key_{i})s
-                      AND mt2.feature_value = %(feature_value_{i})s
+                      AND (
+                            mt2.feature_value ILIKE '%' || %(feature_value_{i})s || '%'
+                            OR %(feature_value_{i})s ILIKE '%' || mt2.feature_value || '%'
+                        )
                 )
             """
             params[f"feature_key_{i}"] = fk

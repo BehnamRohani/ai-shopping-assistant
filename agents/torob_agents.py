@@ -10,7 +10,7 @@ from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from prompt.prompts import *
 from sql.similarity_search_db import similarity_search, find_candidate_shops, similarity_search_cat, similarity_search_image
-from sql.sql_utils import execute_sql
+from sql.sql_utils import execute_sql, top_features_summary
 from sql.sql_utils import get_chat_history, get_base_id_and_index
 from utils.utils import preprocess_persian
 from sql.sql_utils import load_extra_info
@@ -397,6 +397,8 @@ class TorobInfoAgent(TorobAgentBase):
 
 class TorobConversationAgent(TorobAgentBase):
     def __init__(self):
+        top_features = top_features_summary()
+        print(top_features)
         super().__init__(
             name="TorobConversationAgent",
             model_name=os.getenv("SHOPPING_MODEL"),
@@ -407,12 +409,12 @@ class TorobConversationAgent(TorobAgentBase):
                 + "\nYou have access to the following tools:"
                 + "\n"
                 + find_candidate_shops_tool 
-                + "\n" + similarity_search_tool 
+                # + "\n" + similarity_search_tool 
                 + "\nBelow is structure of data in database:"
-                + schema_prompt
+                + schema_prompt +
+                "\n" + top_features
             ),
-            tools=[find_candidate_shops,
-                   similarity_search],
+            tools=[find_candidate_shops],
             output_type=ConversationResponse,
         )
 

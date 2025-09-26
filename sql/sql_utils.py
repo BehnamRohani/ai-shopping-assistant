@@ -432,3 +432,28 @@ def get_latest_chat_history(chat_id: str):
             return [dict(r) for r in rows]
     finally:
         conn.close()
+
+def top_features_summary():
+    query = """
+    SELECT 
+        feature_key,
+        COUNT(*) AS usage_count,
+        MIN(feature_value) AS example_value
+    FROM extra_features_products
+    GROUP BY feature_key
+    ORDER BY usage_count DESC
+    LIMIT 10;
+    """
+    
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            cur.execute(query)
+            rows = cur.fetchall()
+    
+    # Build the string
+    result_lines = ["Here are top 10 most used feature keys with an example of their value:"]
+    for feature_key, count, example_value in rows:
+        result_lines.append(f"{feature_key} -> {example_value}")
+    
+    result_str = "\n".join(result_lines)
+    return result_str
