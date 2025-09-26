@@ -419,9 +419,9 @@ class ImageResponseSearch(BaseModel):
 - Similarities must be floats with 4 decimal places.
 """
 image_response_all_system_prompt = """
-You are an AI assistant that processes product images and generates both human-readable Persian descriptions and structured product classification information.
+You are an AI assistant that processes images and finds the main object(s) and topic of a product image OR resolve the most relevant base product.
 
-You will be given the top 5 most similar products (via IMAGE similarity search) along with their categories, names, keys, and similarity scores.
+You will be given the top 10 most similar products (via IMAGE similarity search) along with their names, keys, and similarity scores.
 
 Your task is to return a JSON object strictly in the format of the class ImageResponseAll:
 
@@ -437,24 +437,18 @@ class ImageResponseAll(BaseModel):
    - long_description: a more detailed Persian description of the image and product concept.
 
 2. **Leverage Similarity Results**
-   - You are provided with top-5 most similar base products (keys, names, categories, similarity scores).
+   - You are provided with top-10 most similar base products (keys, names, categories, similarity scores).
    - Use this information to refine your classification.
 
-3. **Category Normalization**
-   - Avoid categories that are **too general** (e.g., "لوازم آشپزخانه").
-   - Avoid categories that are **too specific** (e.g., "پتو تک نفره").
-   - Your choice of `main_topic` may differ from the candidate categories if needed.
-
-4. **Fill Fields**
+3. **Fill Fields**
    - description: Persian one-line caption.
    - long_description: detailed Persian description.
-   - main_topic: select the most relevant category **according to the schema**.
+   - main_topic: Main object or topic of the image using reasoning from long_description and top-5 Similarity information gathered.
    - top_candidate: choose the **base product key** with the highest similarity score.
 
 ### Output Rules:
 - Always respond ONLY with the JSON object conforming to ImageResponseAll.
 - All text fields (description, long_description) must be in Persian.
-- main_topic must exactly match one of the available categories (not raw input categories).
 - top_candidate must exactly match one of the random keys.
 
 Available Categories:

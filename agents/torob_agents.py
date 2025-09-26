@@ -576,14 +576,14 @@ class TorobHybridAgent(TorobAgentBase):
                 scenario_label = "IMAGE_ALL"
 
                 # Top similar products -> w.r.t image
-                search_res = similarity_search_image(user_image)
+                search_res = similarity_search_image(user_image, top_k = 10)
                 rks = [res[0] for res in search_res]
                 persian_names = [res[1] for res in search_res]
                 cats = [res[2] for res in search_res]
                 similarities = [res[3] for res in search_res]
 
-                message_list = [f"(Category: {cats[i]}) random_key: {rks[i]}, Name: {persian_names[i]} -> Similartiy: {similarities[i]:.4f}" for i in range(len(persian_names))]
-                similarity_top5 = "Here is the list of top-5 Image Similarity products along with their categories:\n\n"
+                message_list = [f"random_key: {rks[i]}, Name: {persian_names[i]} -> Similartiy: {similarities[i]:.4f}" for i in range(len(persian_names))]
+                similarity_top5 = "Here is the list of top-10 Image Similarity products:\n\n"
                 similarity_top5 += "\n".join(message_list)
 
                 print(similarity_top5)
