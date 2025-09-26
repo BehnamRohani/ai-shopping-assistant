@@ -163,7 +163,7 @@ and applies optional filters. Each filter is applied with the condition:
 `(param IS NULL OR condition)`, so if a parameter is None or 'Ignore', it is skipped.
 Special cases:
 - score → enforces `mt.score >= value`
-- price_min / price_max → applied with ±5% tolerance
+- price_min / price_max
 
 Inputs:
 - query (str): User's product description -> i.e., the product_name or more.
@@ -200,7 +200,6 @@ IMPORTANT:
 - The `member_random_keys` list in the final ConversationResponse MUST remain NULL
   until the user explicitly confirms a 'member' OR the flow reaches Turn 5.
 """
-
 
 SIMILARITY_SEARCH_NOTES = """
 ## Important: Interpreting similarity_search results

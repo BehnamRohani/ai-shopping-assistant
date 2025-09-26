@@ -403,12 +403,11 @@ class TorobConversationAgent(TorobAgentBase):
                 + "\n"
                 + find_candidate_shops_tool 
                 + "\n" + similarity_search_tool 
-                # + "\n" + execute_query_tool
                 + "\nBelow is structure of data in database:"
                 + schema_prompt
             ),
             tools=[find_candidate_shops,
-                   similarity_search, execute_sql],
+                   similarity_search],
             output_type=ConversationResponse,
         )
 

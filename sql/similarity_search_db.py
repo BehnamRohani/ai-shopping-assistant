@@ -193,8 +193,8 @@ def find_candidate_shops(
     price_max = price_max if price_max is not None else price_max_default
 
     # ±5% tolerance
-    price_min = int(price_min * 0.95)
-    price_max = int(price_max * 1.05)
+    price_min = int(price_min * 0.95) if price_min != price_max else price_min
+    price_max = int(price_max * 1.05) if price_min != price_max else price_max
 
     params: Dict[str, Any] = {
         "query_vector": query_vector_str,
