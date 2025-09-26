@@ -547,12 +547,14 @@ class TorobHybridAgent(TorobAgentBase):
                 persian_names = [res[1] for res in search_res]
                 cats = [res[2] for res in search_res]
                 similarities = [res[3] for res in search_res]
-                
-                # message_list = [f"(Category: {cats[i]}) Name: {persian_names[i]} -> Similartiy: {similarities[i]}" for i in range(len(persian_names))]
-                # similarity_top5 = "Here is the list of top 5 similar products along with their categories:\n\n"
-                # similarity_top5 += "\n".join(message_list)
 
-                resp = ShoppingResponse(message = cats[0:1],
+                message_list = [f"(Category: {cats[i]}) Name: {persian_names[i]} -> Similartiy: {similarities[i]}" for i in range(len(persian_names))]
+                similarity_top5 = "Here is the list of top 5 similar products along with their categories:\n\n"
+                similarity_top5 += "\n".join(message_list)
+
+                print(similarity_top5)
+
+                resp = ShoppingResponse(message = cats[0],
                                         base_random_keys=rks[0:1])
                 output_dict = dict(resp)
                 return None, output_dict
